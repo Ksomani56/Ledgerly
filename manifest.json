@@ -1,0 +1,16 @@
+{
+  "name": "Ledgerly — Invoice Generator",
+  "short_name": "Ledgerly",
+  "description": "Professional Invoicing, Quotations, and Payment Tracking SPA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef1ea",
+  "theme_color": "#213f3d",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23213f3d'/><text x='50' y='66' font-size='50' font-family='serif' font-weight='bold' fill='%23f3ead2' text-anchor='middle'>L</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
