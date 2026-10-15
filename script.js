@@ -445,38 +445,72 @@ function initSignaturePad(canvas, existingDataUrl){
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.strokeStyle = '#16241f';
+  canvas.style.touchAction = 'none';
   let drawing = false;
   let hasDrawing = false;
 
   function pos(e){
     const rect = canvas.getBoundingClientRect();
+    let cx = 0, cy = 0;
+    if(e.touches && e.touches.length > 0){
+      cx = e.touches[0].clientX;
+      cy = e.touches[0].clientY;
+    } else if(e.changedTouches && e.changedTouches.length > 0){
+      cx = e.changedTouches[0].clientX;
+      cy = e.changedTouches[0].clientY;
+    } else {
+      cx = e.clientX;
+      cy = e.clientY;
+    }
     return {
-      x: (e.clientX - rect.left) * (canvas.width / rect.width),
-      y: (e.clientY - rect.top) * (canvas.height / rect.height)
+      x: (cx - rect.left) * (canvas.width / rect.width),
+      y: (cy - rect.top) * (canvas.height / rect.height)
     };
   }
+
   function start(e){
+    if(e.cancelable) e.preventDefault();
     drawing = true; hasDrawing = true;
-    const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
-    canvas.setPointerCapture(e.pointerId);
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    if(e.pointerId && canvas.setPointerCapture){
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+    }
   }
+
   function move(e){
     if(!drawing) return;
-    const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if(e.cancelable) e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
   }
-  function end(){ drawing = false; }
 
+  function end(e){
+    if(e && e.cancelable) e.preventDefault();
+    drawing = false;
+  }
+
+  // Pointer listeners (standard modern desktop & mobile browsers)
   canvas.addEventListener('pointerdown', start);
   canvas.addEventListener('pointermove', move);
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);
-  canvas.addEventListener('pointerleave', end);
+
+  // Native touch listeners (fallback for iOS Safari and mobile WebViews)
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end, { passive: false });
+  canvas.addEventListener('touchcancel', end, { passive: false });
 
   if(existingDataUrl){
     const img = new Image();
-    img.onload = ()=> ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    img.onload = ()=> {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      hasDrawing = true;
+    };
     img.src = existingDataUrl;
-    hasDrawing = true;
   }
 
   return {
@@ -588,12 +622,16 @@ function appShell(activePath, title, eyebrow, contentHTML){
 
   return `
   <div class="shell">
+    <div class="sidebar-backdrop no-print" id="sidebarBackdrop"></div>
     <div class="mobile-topbar no-print">
       <div class="brandmark"><div class="seal">L</div><div class="word">Ledger<span>ly</span></div></div>
       <button id="menuToggle" aria-label="Open menu">&#9776;</button>
     </div>
     <aside class="sidebar no-print" id="sidebar">
-      <div class="brandmark"><div class="seal">L</div><div class="word">Ledger<span>ly</span></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="brandmark"><div class="seal">L</div><div class="word">Ledger<span>ly</span></div></div>
+        <button class="sidebar-close-btn no-print" id="sidebarCloseBtn" aria-label="Close menu">&times;</button>
+      </div>
       <nav class="sidebar-nav">${navHTML}</nav>
       <div class="sidebar-user">
         <div class="name">${escapeHTML(user?.name || '')}</div>
@@ -616,8 +654,31 @@ function appShell(activePath, title, eyebrow, contentHTML){
 
 function mountShellEvents(){
   const toggle = document.getElementById('menuToggle');
+  const closeBtn = document.getElementById('sidebarCloseBtn');
+  const backdrop = document.getElementById('sidebarBackdrop');
   const sidebar = document.getElementById('sidebar');
-  if(toggle){ toggle.addEventListener('click', ()=> sidebar.classList.toggle('open')); }
+
+  function openSidebar(){
+    if(sidebar) sidebar.classList.add('open');
+    if(backdrop) backdrop.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar(){
+    if(sidebar) sidebar.classList.remove('open');
+    if(backdrop) backdrop.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  if(toggle) toggle.addEventListener('click', openSidebar);
+  if(closeBtn) closeBtn.addEventListener('click', closeSidebar);
+  if(backdrop) backdrop.addEventListener('click', closeSidebar);
+
+  // Close sidebar on navigation click on mobile screens
+  if(sidebar){
+    sidebar.querySelectorAll('.nav-link, #logoutBtn').forEach(el => {
+      el.addEventListener('click', closeSidebar);
+    });
+  }
   
   const logout = document.getElementById('logoutBtn');
   if(logout){ logout.addEventListener('click', ()=>{ clearSession(); location.hash = '#/login'; }); }
@@ -1792,7 +1853,7 @@ function renderCreateInvoice(params){
           qty: 1,
           unit: chosen.unit || 'pcs',
           price: Number(chosen.price) || 0,
-          taxPct: chosen.taxRate !== undefined ? Number(chosen.taxRate) : (defaultEntTaxRate || 18)
+          taxPct: chosen.taxRate !== undefined ? Number(chosen.taxRate) : (Number(defaultEnt?.defaultTaxRate) || 18)
         });
         renderItemsBody();
         recalcTotals();
@@ -2347,7 +2408,11 @@ function renderPreview(params){
   );
 
   const cleanPhone = (invoice.customer.phone || '').replace(/[^0-9]/g, '');
-  const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
+  let formattedPhone = cleanPhone;
+  if(formattedPhone.length === 10 && /^[6-9]/.test(formattedPhone)){
+    formattedPhone = '91' + formattedPhone;
+  }
+  const waUrl = formattedPhone ? `https://wa.me/${formattedPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
 
   // Precomposed Email Content
   const emailSubject = isPaid
@@ -2383,6 +2448,9 @@ function renderPreview(params){
         </button>` : ''}
       </div>
       <div class="left">
+        ${(typeof navigator !== 'undefined' && navigator.share) ? `
+        <button class="btn btn-whatsapp btn-sm" id="nativeShareBtn" title="Share via Mobile Share Sheet">Share</button>
+        ` : ''}
         <a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm" id="waShareBtn">WhatsApp Share</a>
         <button class="btn btn-ghost btn-sm" id="emailBtn">Email ${isPaid ? 'Receipt' : 'Doc'}</button>
         <button class="btn btn-ghost btn-sm" id="downloadPdfBtn">Download PDF</button>
@@ -2502,7 +2570,24 @@ function renderPreview(params){
   // Print button
   document.getElementById('printBtn').addEventListener('click', ()=> window.print());
 
-  // Direct PDF Download with html2pdf.js
+  // Native Web Share API (Mobile phones & tablets)
+  const nativeShareBtn = document.getElementById('nativeShareBtn');
+  if(nativeShareBtn){
+    nativeShareBtn.addEventListener('click', async ()=>{
+      if(navigator.share){
+        try{
+          await navigator.share({
+            title: `${isEstimate ? 'Quotation' : 'Invoice'} ${invoice.invoiceNumber}`,
+            text: decodeURIComponent(waText.replace(/\+/g, ' '))
+          });
+        }catch(err){
+          // User cancelled or share dismissed
+        }
+      }
+    });
+  }
+
+  // Direct PDF Download with html2pdf.js (Optimized for both mobile and desktop)
   document.getElementById('downloadPdfBtn').addEventListener('click', ()=>{
     const sheetEl = document.getElementById('invoiceSheet');
     if(!sheetEl){ window.print(); return; }
@@ -2513,13 +2598,14 @@ function renderPreview(params){
         margin: [8, 8, 8, 8],
         filename: `${invoice.invoiceNumber}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0, windowWidth: 850 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       window.html2pdf().set(opt).from(sheetEl).save().then(()=>{
         showToast('PDF downloaded successfully!');
       }).catch(err => {
         console.error(err);
+        showToast('Direct PDF download failed. Opening print view...');
         window.print();
       });
     } else {
