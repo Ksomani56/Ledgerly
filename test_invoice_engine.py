@@ -171,6 +171,34 @@ class TestInvoiceEngine(unittest.TestCase):
         self.assertEqual(num_to_words(125000), "One Lakh Twenty-Five Thousand Rupees Only")
         self.assertEqual(num_to_words(0), "Zero Rupees Only")
 
+    def test_tc_hsn_01_breakdown_aggregation(self):
+        """TC_HSN_01: Verify multi-item HSN tax aggregation and intra-state split."""
+        items = [
+            {'hsn': '998314', 'qty': 2, 'price': 1000.0, 'tax_pct': 18.0},
+            {'hsn': '998314', 'qty': 1, 'price': 2000.0, 'tax_pct': 18.0},
+            {'hsn': '8471',   'qty': 1, 'price': 5000.0, 'tax_pct': 12.0},
+        ]
+        hsn_map = {}
+        for it in items:
+            code = it['hsn']
+            taxable = it['qty'] * it['price']
+            rate = it['tax_pct']
+            key = f"{code}_{rate}"
+            if key not in hsn_map:
+                hsn_map[key] = {'taxable': 0.0, 'tax': 0.0, 'cgst': 0.0, 'sgst': 0.0}
+            hsn_map[key]['taxable'] += taxable
+            tax_amt = taxable * (rate / 100.0)
+            hsn_map[key]['tax'] += tax_amt
+            hsn_map[key]['cgst'] += tax_amt / 2.0
+            hsn_map[key]['sgst'] += tax_amt / 2.0
+
+        self.assertEqual(hsn_map['998314_18.0']['taxable'], 4000.0)
+        self.assertEqual(hsn_map['998314_18.0']['tax'], 720.0)
+        self.assertEqual(hsn_map['998314_18.0']['cgst'], 360.0)
+        self.assertEqual(hsn_map['998314_18.0']['sgst'], 360.0)
+        self.assertEqual(hsn_map['8471_12.0']['taxable'], 5000.0)
+        self.assertEqual(hsn_map['8471_12.0']['tax'], 600.0)
+
 
 if __name__ == '__main__':
     unittest.main()

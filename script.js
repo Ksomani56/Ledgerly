@@ -1189,7 +1189,8 @@ function renderDashboard(){
   });
 }
 
-function rowHTML(inv){
+function rowHTML(inv, opts = {}){
+  const showActions = !!opts.showActions;
   const symbol = inv.currencySymbol || '₹';
   const effectiveStatus = getInvoiceEffectiveStatus(inv);
   const bal = getInvoiceBalance(inv);
@@ -1212,6 +1213,12 @@ function rowHTML(inv){
       <span class="stamp ${statusClass}">${effectiveStatus}</span>
       ${isOverdue ? `<span class="stamp overdue" style="font-size:10px;padding:2px 5px;margin-left:3px;">+${overdueDays}d</span>` : ''}
     </td>
+    ${showActions ? `
+    <td class="action-cell" style="text-align:right;white-space:nowrap;">
+      <button class="btn btn-ghost btn-sm quick-view-btn" data-id="${inv.id}" title="View Document" style="padding:3px 8px;font-size:11px;">View</button>
+      <button class="btn btn-ghost btn-sm quick-clone-btn" data-id="${inv.id}" title="Clone / Duplicate" style="padding:3px 8px;font-size:11px;">Clone</button>
+      <button class="btn btn-ghost btn-sm quick-del-btn" data-id="${inv.id}" title="Delete Document" style="padding:3px 8px;font-size:11px;color:var(--rust);">Delete</button>
+    </td>` : ''}
   </tr>`;
 }
 
@@ -2458,6 +2465,119 @@ function renderPreview(params){
       </table>
     </div>` : '';
 
+  // GST HSN/SAC Tax Summary Table
+  let hsnTaxTableHTML = '';
+  const hasTaxOrHsn = (invoice.tax > 0) || (invoice.items && invoice.items.some(i => i.hsn || (Number(i.taxPct) > 0)));
+  if(hasTaxOrHsn && invoice.items && invoice.items.length > 0 && !isEstimate){
+    const isInterState = !!invoice.isInterState;
+    const discountRatio = (invoice.subtotal > 0 && invoice.taxableAmount !== undefined)
+      ? (invoice.taxableAmount / invoice.subtotal)
+      : 1;
+
+    const hsnMap = {};
+    invoice.items.forEach(it => {
+      const code = (it.hsn && String(it.hsn).trim()) ? String(it.hsn).trim() : 'General';
+      const qty = Number(it.qty) || 0;
+      const price = Number(it.price) || 0;
+      const lineSub = qty * price;
+      const rate = (it.taxPct !== undefined && it.taxPct !== null && it.taxPct !== '')
+        ? Number(it.taxPct)
+        : (Number(invoice.taxPct) || 0);
+
+      const taxable = lineSub * discountRatio;
+      const taxVal = taxable * (rate / 100);
+
+      const key = `${code}_${rate}`;
+      if(!hsnMap[key]){
+        hsnMap[key] = {
+          code,
+          rate,
+          taxable: 0,
+          cgst: 0,
+          sgst: 0,
+          igst: 0,
+          totalTax: 0
+        };
+      }
+      hsnMap[key].taxable += taxable;
+      if(isInterState){
+        hsnMap[key].igst += taxVal;
+      } else {
+        hsnMap[key].cgst += taxVal / 2;
+        hsnMap[key].sgst += taxVal / 2;
+      }
+      hsnMap[key].totalTax += taxVal;
+    });
+
+    const hsnEntries = Object.values(hsnMap);
+    if(hsnEntries.length > 0){
+      let totTaxable = 0, totCgst = 0, totSgst = 0, totIgst = 0, totTax = 0;
+      hsnEntries.forEach(e => {
+        totTaxable += e.taxable;
+        totCgst += e.cgst;
+        totSgst += e.sgst;
+        totIgst += e.igst;
+        totTax += e.totalTax;
+      });
+
+      hsnTaxTableHTML = `
+        <div class="sheet-ledger" style="margin: 16px 0;">
+          <div class="sheet-ledger-head">Tax Breakdown (HSN / SAC Summary)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>HSN / SAC</th>
+                <th class="num">Taxable Value</th>
+                ${isInterState ? `
+                  <th class="num">IGST Rate</th>
+                  <th class="num">IGST Amt</th>
+                ` : `
+                  <th class="num">CGST Rate</th>
+                  <th class="num">CGST Amt</th>
+                  <th class="num">SGST Rate</th>
+                  <th class="num">SGST Amt</th>
+                `}
+                <th class="num">Total Tax</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${hsnEntries.map(e => `
+                <tr>
+                  <td class="mono" style="font-weight:600;">${escapeHTML(e.code)}</td>
+                  <td class="num mono">${fmtMoney(e.taxable, sym)}</td>
+                  ${isInterState ? `
+                    <td class="num mono">${e.rate}%</td>
+                    <td class="num mono">${fmtMoney(e.igst, sym)}</td>
+                  ` : `
+                    <td class="num mono">${(e.rate / 2).toFixed(1)}%</td>
+                    <td class="num mono">${fmtMoney(e.cgst, sym)}</td>
+                    <td class="num mono">${(e.rate / 2).toFixed(1)}%</td>
+                    <td class="num mono">${fmtMoney(e.sgst, sym)}</td>
+                  `}
+                  <td class="num mono" style="font-weight:600;">${fmtMoney(e.totalTax, sym)}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row" style="font-weight:700;background:var(--paper);border-top:1px solid #d3d6c7;">
+                <td>Total</td>
+                <td class="num mono">${fmtMoney(totTaxable, sym)}</td>
+                ${isInterState ? `
+                  <td class="num mono">—</td>
+                  <td class="num mono">${fmtMoney(totIgst, sym)}</td>
+                ` : `
+                  <td class="num mono">—</td>
+                  <td class="num mono">${fmtMoney(totCgst, sym)}</td>
+                  <td class="num mono">—</td>
+                  <td class="num mono">${fmtMoney(totSgst, sym)}</td>
+                `}
+                <td class="num mono">${fmtMoney(totTax, sym)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+  }
+
   // Document Title
   const documentDisplayTitle = isEstimate
     ? 'QUOTATION / ESTIMATE'
@@ -2562,6 +2682,8 @@ function renderPreview(params){
         <span style="font-weight:700;color:var(--ink-soft);text-transform:uppercase;font-size:11px;letter-spacing:0.04em;display:inline-block;margin-right:6px;">Amount in Words:</span>
         <span style="font-weight:600;color:var(--ink);">${escapeHTML(numberToWords(invoice.grandTotal, sym))}</span>
       </div>
+
+      ${hsnTaxTableHTML}
 
       ${paymentLedgerHTML}
 
@@ -2999,6 +3121,7 @@ function renderHistory(){
             <th class="num">Amount</th>
             <th class="num">Balance Due</th>
             <th>Status</th>
+            <th style="text-align:right;">Actions</th>
           </tr>
         </thead>
         <tbody id="historyBody"></tbody>
@@ -3038,11 +3161,39 @@ function renderHistory(){
 
     const body = document.getElementById('historyBody');
     body.innerHTML = invoices.length
-      ? invoices.map(rowHTML).join('')
-      : `<tr class="empty-row"><td colspan="6">No documents match your search criteria.</td></tr>`;
+      ? invoices.map(i => rowHTML(i, { showActions: true })).join('')
+      : `<tr class="empty-row"><td colspan="7">No documents match your search criteria.</td></tr>`;
 
     body.querySelectorAll('tr[data-id]').forEach(tr=>{
       tr.addEventListener('click', ()=> location.hash = '#/preview?id=' + tr.dataset.id);
+    });
+
+    body.querySelectorAll('.quick-view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        location.hash = '#/preview?id=' + btn.dataset.id;
+      });
+    });
+
+    body.querySelectorAll('.quick-clone-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        location.hash = '#/create?clone_id=' + btn.dataset.id;
+      });
+    });
+
+    body.querySelectorAll('.quick-del-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if(confirm('Are you sure you want to permanently delete this document?')){
+          let all = getAll(DB.invoices);
+          all = all.filter(x => x.id !== id);
+          setAll(DB.invoices, all);
+          showToast('Document deleted successfully.');
+          draw();
+        }
+      });
     });
 
     // Wire up CSV export for currently filtered subset

@@ -515,6 +515,12 @@ input,select,textarea{font-family:var(--font-body);}
 }
 .sheet-ledger td { padding: 6px 10px; border-bottom: 1px solid #eee; }
 .sheet-ledger td.num { text-align: right; }
+.sheet-ledger tr.total-row td { font-weight: 700; background: #fafaf5; border-top: 1px solid #d3d6c7; }
+
+.quick-view-btn, .quick-clone-btn, .quick-del-btn {
+  display: inline-block;
+  margin-left: 2px;
+}
 
 /* Item Table Extra Columns */
 .inv-builder-table th.col-hsn, .inv-builder-table td.col-hsn { width: 90px; }
