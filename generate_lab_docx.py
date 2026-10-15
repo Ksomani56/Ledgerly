@@ -63,8 +63,72 @@ def style_heading(doc, text, level=1):
         run.font.color.rgb = RGBColor(0x34, 0x49, 0x5E)
     return h
 
+def set_table_borders(table, color="000000", sz="8", val="single"):
+    """Sets solid borders around a table and all its interior gridlines."""
+    tblPr = table._tbl.tblPr
+    tblBorders = OxmlElement('w:tblBorders')
+    for b in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+        border = OxmlElement(f'w:{b}')
+        border.set(qn('w:val'), val)
+        border.set(qn('w:sz'), sz)
+        border.set(qn('w:space'), '0')
+        border.set(qn('w:color'), color)
+        tblBorders.append(border)
+    tblPr.append(tblBorders)
+
+def add_student_info_table(doc):
+    """Adds the required Student & Faculty identification table at top of document."""
+    info_data = [
+        ("NAME", "Kimaya Teli\nAbhishek kumar Kairamkonda\nKrishna Somani"),
+        ("ROLL NO", "24102C0079\n24102C0085\n24102C0067"),
+        ("BRANCH", "CMPN"),
+        ("DIV", "C"),
+        ("SUBJECT", "WDL LAB"),
+        ("FACULTY", "Dr. Ravindra Sangle")
+    ]
+    table = doc.add_table(rows=len(info_data), cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    set_table_borders(table, color="000000", sz="8")
+
+    col_widths = [Inches(1.8), Inches(4.7)]
+    for row_idx, (label, val) in enumerate(info_data):
+        row = table.rows[row_idx]
+
+        # Label Cell
+        c0 = row.cells[0]
+        c0.width = col_widths[0]
+        set_cell_margins(c0, top=100, bottom=100, left=140, right=140)
+        p0 = c0.paragraphs[0]
+        p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p0.paragraph_format.space_before = Pt(0)
+        p0.paragraph_format.space_after = Pt(0)
+        p0.paragraph_format.line_spacing = 1.15
+        r0 = p0.add_run(label)
+        r0.font.name = 'Calibri'
+        r0.font.size = Pt(10.5)
+        r0.font.bold = True
+        r0.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+
+        # Value Cell
+        c1 = row.cells[1]
+        c1.width = col_widths[1]
+        set_cell_margins(c1, top=100, bottom=100, left=140, right=140)
+        p1 = c1.paragraphs[0]
+        p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p1.paragraph_format.space_before = Pt(0)
+        p1.paragraph_format.space_after = Pt(0)
+        p1.paragraph_format.line_spacing = 1.15
+        r1 = p1.add_run(val)
+        r1.font.name = 'Calibri'
+        r1.font.size = Pt(10.5)
+        r1.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+
+    doc.add_paragraph() # spacer after info table
+
 def add_header(doc, exp_num, title, module_num=None):
-    """Adds a standard professional header block matching university lab manual formatting."""
+    """Adds the student header table and standard professional experiment title block."""
+    add_student_info_table(doc)
+
     p_top = doc.add_paragraph()
     p_top.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r_top = p_top.add_run("SOFTWARE ENGINEERING & WEB DEVELOPMENT LAB MANUAL")
