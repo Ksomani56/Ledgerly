@@ -206,7 +206,52 @@ function fmtDate(d){
 }
 
 function todayISO(){
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function numberToWords(num, symbol = '₹'){
+  num = Math.round(Number(num) || 0);
+  if(num === 0) return 'Zero';
+  if(num < 0) return 'Minus ' + numberToWords(Math.abs(num), symbol);
+
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function inWords(n){
+    let str = '';
+    if(n >= 10000000){
+      str += inWords(Math.floor(n / 10000000)) + 'Crore ';
+      n %= 10000000;
+    }
+    if(n >= 100000){
+      str += inWords(Math.floor(n / 100000)) + 'Lakh ';
+      n %= 100000;
+    }
+    if(n >= 1000){
+      str += inWords(Math.floor(n / 1000)) + 'Thousand ';
+      n %= 1000;
+    }
+    if(n >= 100){
+      str += inWords(Math.floor(n / 100)) + 'Hundred ';
+      n %= 100;
+    }
+    if(n > 0){
+      if(str !== '') str += 'and ';
+      if(n < 20){
+        str += a[n];
+      } else {
+        str += b[Math.floor(n / 10)] + (n % 10 !== 0 ? '-' + a[n % 10].trim() : '') + ' ';
+      }
+    }
+    return str;
+  }
+
+  const currName = (symbol === '$') ? 'Dollars' : (symbol === '€') ? 'Euros' : (symbol === '£') ? 'Pounds' : 'Rupees';
+  return (inWords(num).trim() + ' ' + currName + ' Only').replace(/\s+/g, ' ');
 }
 
 function escapeHTML(str){
@@ -1989,10 +2034,16 @@ function recalcTotals(){
 }
 
 function nextDocNumber(userId, docType = 'invoice'){
-  const count = getAll(DB.invoices).filter(i => i.userId === userId).length;
+  const allInvs = getAll(DB.invoices).filter(i => i.userId === userId);
   const year = new Date().getFullYear();
   const prefix = (docType === 'estimate') ? 'EST' : (docType === 'proforma') ? 'PRO' : 'INV';
-  return `${prefix}-${year}-${String(count+1).padStart(3,'0')}`;
+  let num = allInvs.length + 1;
+  let candidate = `${prefix}-${year}-${String(num).padStart(3, '0')}`;
+  while(allInvs.some(i => i.invoiceNumber === candidate)){
+    num++;
+    candidate = `${prefix}-${year}-${String(num).padStart(3, '0')}`;
+  }
+  return candidate;
 }
 
 function handleSave(status, goToPreview, bPad){
@@ -2357,6 +2408,11 @@ function renderPreview(params){
         ${paidTotal > 0 ? `
         <div class="row" style="color:#2c6b3f;font-weight:600;"><span>Total Paid</span><span class="amt">${fmtMoney(paidTotal, sym)}</span></div>
         <div class="row" style="color:var(--rust);font-weight:700;"><span>Balance Due</span><span class="amt">${fmtMoney(balanceDue, sym)}</span></div>` : ''}
+      </div>
+
+      <div style="margin:10px 0 16px;padding:8px 12px;background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius);font-size:12.5px;">
+        <span style="font-weight:700;color:var(--ink-soft);text-transform:uppercase;font-size:11px;letter-spacing:0.04em;display:inline-block;margin-right:6px;">Amount in Words:</span>
+        <span style="font-weight:600;color:var(--ink);">${escapeHTML(numberToWords(invoice.grandTotal, sym))}</span>
       </div>
 
       ${paymentLedgerHTML}
