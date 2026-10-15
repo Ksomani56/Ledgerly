@@ -140,6 +140,37 @@ class TestInvoiceEngine(unittest.TestCase):
         self.assertFalse(valid)
         self.assertIn("10 digits", msg)
 
+    def test_tc_words_01_indian_denominations(self):
+        """TC_WRD_01: Verify Indian numbering conversion (Crores, Lakhs, Thousands)."""
+        def num_to_words(n):
+            a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen ']
+            b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+            if n == 0: return 'Zero Rupees Only'
+            def in_words(num):
+                s = ''
+                if num >= 10000000:
+                    s += in_words(num // 10000000) + 'Crore '
+                    num %= 10000000
+                if num >= 100000:
+                    s += in_words(num // 100000) + 'Lakh '
+                    num %= 100000
+                if num >= 1000:
+                    s += in_words(num // 1000) + 'Thousand '
+                    num %= 1000
+                if num >= 100:
+                    s += in_words(num // 100) + 'Hundred '
+                    num %= 100
+                if num > 0:
+                    if s: s += 'and '
+                    if num < 20: s += a[num]
+                    else: s += b[num // 10] + ('-' + a[num % 10].strip() if num % 10 else '') + ' '
+                return s
+            return ' '.join((in_words(int(round(n))).strip() + ' Rupees Only').split())
+
+        self.assertEqual(num_to_words(50000), "Fifty Thousand Rupees Only")
+        self.assertEqual(num_to_words(125000), "One Lakh Twenty-Five Thousand Rupees Only")
+        self.assertEqual(num_to_words(0), "Zero Rupees Only")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -995,16 +995,17 @@ test_tc_tax_02_interstate_gst (__main__.TestInvoiceEngine) ... ok
 test_tc_total_01_auto_round_off (__main__.TestInvoiceEngine) ... ok
 test_tc_val_01_valid_registration (__main__.TestInvoiceEngine) ... ok
 test_tc_val_02_invalid_phone (__main__.TestInvoiceEngine) ... ok
+test_tc_words_01_indian_denominations (__main__.TestInvoiceEngine) ... ok
 
 ----------------------------------------------------------------------
-Ran 12 tests in 0.001s
+Ran 13 tests in 0.001s
 
 OK (100% Passing)''')
 
     style_heading(doc, "6. Conclusion", 2)
     doc.add_paragraph(
         "Experiment 10 successfully verified Ledgerly's core business logic through an automated test plan. "
-        "All 12 test cases executed cleanly, providing reliable regression protection against calculation discrepancies."
+        "All 13 test cases executed cleanly, providing reliable regression protection against calculation discrepancies."
     )
 
     doc.save(OUTPUT_DIR / "Exp_10_Automated_Testing_Pytest_Unittest.docx")

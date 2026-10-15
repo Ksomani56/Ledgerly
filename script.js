@@ -592,6 +592,21 @@ function getPaymentQrTarget(invoice){
 
 function qrImageUrl(data, size = 200){
   if(!data) return '';
+  if(typeof QRCode !== 'undefined'){
+    try{
+      const div = document.createElement('div');
+      new QRCode(div, {
+        text: data,
+        width: size,
+        height: size,
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      const img = div.querySelector('img');
+      if(img && img.src && img.src.startsWith('data:image')) return img.src;
+      const canvas = div.querySelector('canvas');
+      if(canvas) return canvas.toDataURL('image/png');
+    }catch(err){}
+  }
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}`;
 }
 
@@ -640,6 +655,32 @@ window.addEventListener('hashchange', route);
 window.addEventListener('DOMContentLoaded', ()=>{
   if(!location.hash) location.hash = currentUser() ? '#/dashboard' : '#/login';
   route();
+});
+
+// Power User Global Keyboard Shortcuts (Escape to close modals, Ctrl/Cmd+S to save, Ctrl/Cmd+P to print)
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if(sidebar) sidebar.classList.remove('open');
+    if(backdrop) backdrop.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  if((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')){
+    const genBtn = document.getElementById('generateBtn');
+    if(genBtn){
+      e.preventDefault();
+      genBtn.click();
+    }
+  }
+  if((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')){
+    const printBtn = document.getElementById('printBtn');
+    if(printBtn && location.hash.startsWith('#/preview')){
+      e.preventDefault();
+      printBtn.click();
+    }
+  }
 });
 
 /* ================================================================
@@ -1197,15 +1238,35 @@ function blankItem(){
 function renderCreateInvoice(params){
   const user = currentUser();
   const editId = params.get('id');
+  const cloneId = params.get('clone_id');
   const preCustId = params.get('cust_id');
   const preEntId = params.get('ent_id');
   const requestedType = params.get('type') || 'invoice';
 
   let invoice = null;
+  let isCloning = false;
   if(editId){
     invoice = getAll(DB.invoices).find(i => i.id === editId && i.userId === user.id);
+  } else if(cloneId){
+    const source = getAll(DB.invoices).find(i => i.id === cloneId && i.userId === user.id);
+    if(source){
+      invoice = JSON.parse(JSON.stringify(source));
+      delete invoice.id;
+      invoice.status = 'Draft';
+      invoice.payments = [];
+      invoice.paidAt = null;
+      invoice.invoiceDate = todayISO();
+      isCloning = true;
+    }
   }
-  builderEditId = invoice ? invoice.id : null;
+
+  const savedDraftRaw = (!editId && !cloneId) ? localStorage.getItem('ig_draft_builder') : null;
+  let savedDraft = null;
+  if(savedDraftRaw){
+    try{ savedDraft = JSON.parse(savedDraftRaw); }catch(e){}
+  }
+
+  builderEditId = editId ? (invoice ? invoice.id : null) : null;
   builderItems = (invoice && invoice.items && invoice.items.length)
     ? invoice.items.map(i => ({
         id: i.id || uid('it'),
@@ -1282,6 +1343,15 @@ function renderCreateInvoice(params){
 
   const content = `
     <div id="createMsg" class="form-msg"></div>
+
+    ${savedDraft ? `
+    <div id="draftBanner" style="background:var(--gold-bg);border:1px solid var(--brass);color:var(--gold-ink);padding:10px 14px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;font-size:13px;flex-wrap:wrap;gap:8px;">
+      <span>Unsaved draft found from earlier session.</span>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-xs" id="restoreDraftBtn" style="background:var(--teal-dark);color:#fff;border:none;padding:5px 12px;border-radius:3px;cursor:pointer;font-weight:600;">Restore Draft</button>
+        <button type="button" class="btn-xs" id="discardDraftBtn" style="background:transparent;border:1px solid currentColor;color:inherit;padding:5px 12px;border-radius:3px;cursor:pointer;">Discard</button>
+      </div>
+    </div>` : ''}
 
     <!-- Document Setup & Template Bar -->
     <div class="card builder-card" style="margin-bottom:20px;padding:18px 24px;">
@@ -1405,6 +1475,16 @@ function renderCreateInvoice(params){
         <div class="field"><label>Number</label><input id="i_number" class="mono" value="${escapeHTML(invoiceNumber)}"></div>
         <div class="field"><label>Date Issued</label><input id="i_date" type="date" value="${invoiceDate}"></div>
         <div class="field"><label id="dueDateLabel">Due Date / Valid Until</label><input id="i_due" type="date" value="${dueDate}"></div>
+      </div>
+      <div class="field-row" style="margin-top:12px;margin-bottom:0;">
+        <div class="field"><label>PO / Reference No.</label><input id="i_po" value="${escapeHTML(invoice?.poNumber || '')}" placeholder="e.g. PO-89210"></div>
+        <div class="field"><label>Place of Supply (State / Code)</label><input id="i_pos" value="${escapeHTML(invoice?.placeOfSupply || '')}" placeholder="e.g. 27 - Maharashtra"></div>
+        <div class="field"><label>Reverse Charge (RCM)</label>
+          <select id="i_rcm" style="padding:10px 12px;">
+            <option value="No" ${invoice?.isRcm==='Yes'?'':'selected'}>No (Normal Supply)</option>
+            <option value="Yes" ${invoice?.isRcm==='Yes'?'selected':''}>Yes (Reverse Charge)</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -1623,6 +1703,67 @@ function renderCreateInvoice(params){
     content
   );
   mountShellEvents();
+
+  if(isCloning){
+    showToast('Cloned invoice items & details into new draft.');
+  }
+
+  // Draft Recovery Listeners
+  const restoreDraftBtn = document.getElementById('restoreDraftBtn');
+  const discardDraftBtn = document.getElementById('discardDraftBtn');
+  const draftBanner = document.getElementById('draftBanner');
+  if(restoreDraftBtn && savedDraft){
+    restoreDraftBtn.addEventListener('click', ()=>{
+      if(savedDraft.c_name) document.getElementById('c_name').value = savedDraft.c_name;
+      if(savedDraft.c_address) document.getElementById('c_address').value = savedDraft.c_address;
+      if(savedDraft.c_email) document.getElementById('c_email').value = savedDraft.c_email;
+      if(savedDraft.c_phone) document.getElementById('c_phone').value = savedDraft.c_phone;
+      if(savedDraft.c_tax) document.getElementById('c_tax').value = savedDraft.c_tax;
+      if(savedDraft.i_terms) document.getElementById('i_terms').value = savedDraft.i_terms;
+      if(savedDraft.i_notes) document.getElementById('i_notes').value = savedDraft.i_notes;
+      if(savedDraft.i_po) document.getElementById('i_po').value = savedDraft.i_po;
+      if(savedDraft.i_pos) document.getElementById('i_pos').value = savedDraft.i_pos;
+      if(savedDraft.items && savedDraft.items.length){
+        builderItems = savedDraft.items;
+        renderItemsBody();
+      }
+      if(savedDraft.discountVal) document.getElementById('i_discount').value = savedDraft.discountVal;
+      if(savedDraft.taxPct) document.getElementById('i_tax').value = savedDraft.taxPct;
+      recalcTotals();
+      if(draftBanner) draftBanner.style.display = 'none';
+      showToast('Draft restored successfully.');
+    });
+  }
+  if(discardDraftBtn){
+    discardDraftBtn.addEventListener('click', ()=>{
+      localStorage.removeItem('ig_draft_builder');
+      if(draftBanner) draftBanner.style.display = 'none';
+      showToast('Unsaved draft discarded.');
+    });
+  }
+
+  // Auto-Save Draft Buffer
+  function autoSaveDraft(){
+    if(builderEditId) return;
+    const draft = {
+      c_name: document.getElementById('c_name')?.value || '',
+      c_address: document.getElementById('c_address')?.value || '',
+      c_email: document.getElementById('c_email')?.value || '',
+      c_phone: document.getElementById('c_phone')?.value || '',
+      c_tax: document.getElementById('c_tax')?.value || '',
+      i_terms: document.getElementById('i_terms')?.value || '',
+      i_notes: document.getElementById('i_notes')?.value || '',
+      i_po: document.getElementById('i_po')?.value || '',
+      i_pos: document.getElementById('i_pos')?.value || '',
+      items: builderItems,
+      discountVal: document.getElementById('i_discount')?.value || 0,
+      discountType: builderDiscountType,
+      taxPct: document.getElementById('i_tax')?.value || 0,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('ig_draft_builder', JSON.stringify(draft));
+  }
+  document.getElementById('app').addEventListener('input', autoSaveDraft);
 
   // Signature Pad in Builder
   const bCanvas = document.getElementById('builderSigPad');
@@ -2152,6 +2293,9 @@ function handleSave(status, goToPreview, bPad){
     grandTotal: totals.grandTotal,
     paymentTerms: document.getElementById('i_terms').value.trim(),
     notes: document.getElementById('i_notes').value.trim(),
+    poNumber: document.getElementById('i_po')?.value.trim() || '',
+    placeOfSupply: document.getElementById('i_pos')?.value.trim() || '',
+    isRcm: document.getElementById('i_rcm')?.value || 'No',
     status: existingInv ? existingInv.status : status,
     payments: existingInv ? (existingInv.payments || []) : [],
     paidAt: existingInv ? existingInv.paidAt : null,
@@ -2164,6 +2308,7 @@ function handleSave(status, goToPreview, bPad){
 
   if(existingIdx >= 0){ invoices[existingIdx] = invoiceData; } else { invoices.push(invoiceData); }
   setAll(DB.invoices, invoices);
+  localStorage.removeItem('ig_draft_builder');
   showToast((docType==='estimate' ? 'Quotation ' : 'Invoice ') + (status === 'Generated' ? 'generated.' : 'saved.'));
   if(goToPreview){ location.hash = '#/preview?id=' + invoiceData.id; }
 }
@@ -2353,6 +2498,9 @@ function renderPreview(params){
             ${isOverdue ? `<span class="stamp overdue" style="margin-left:4px;">${overdueDays}d Overdue</span>` : ''}
           </div>
         </div>
+        ${invoice.placeOfSupply ? `<div><div class="label">Place of Supply</div><div class="val mono">${escapeHTML(invoice.placeOfSupply)}</div></div>` : ''}
+        ${invoice.poNumber ? `<div><div class="label">PO / Ref No.</div><div class="val mono">${escapeHTML(invoice.poNumber)}</div></div>` : ''}
+        ${invoice.isRcm === 'Yes' ? `<div><div class="label">Reverse Charge</div><div class="val mono">Yes (RCM)</div></div>` : ''}
       </div>
 
       ${paidBannerHTML}
@@ -2427,7 +2575,7 @@ function renderPreview(params){
           ${qrTarget && !isPaid ? `
           <div class="pay-block">
             <div class="label">${isCustomUrl ? 'Scan to Pay Link' : 'Scan to Pay (UPI)'}</div>
-            <img src="${qrImageUrl(qrTarget, 200)}" alt="Payment QR code" width="110" height="110">
+            <img src="${qrImageUrl(qrTarget, 200)}" alt="Payment QR code" width="110" height="110" crossorigin="anonymous">
             <div class="upi-id">${escapeHTML(invoice.seller.upiId || 'Scan with any UPI App')}</div>
           </div>` : ''}
 
@@ -2492,6 +2640,7 @@ function renderPreview(params){
     <div class="preview-toolbar no-print">
       <div class="left">
         <a href="#/edit?id=${invoice.id}" class="btn btn-ghost btn-sm">Edit</a>
+        <button class="btn btn-ghost btn-sm" id="duplicateDocBtn" title="Clone details into a new draft">Duplicate</button>
         <select id="statusSelect" class="btn btn-ghost btn-sm" style="padding:7px 10px;">${statusOptions}</select>
         ${!isEstimate ? `
         <button class="btn ${isPaid ? 'btn-ghost' : 'btn-success'} btn-sm" id="recordPaymentBtn">
@@ -2721,7 +2870,15 @@ function renderPreview(params){
     });
   }
 
-  // Status select quick change
+  // Duplicate Document into a fresh draft
+  const duplicateBtn = document.getElementById('duplicateDocBtn');
+  if(duplicateBtn){
+    duplicateBtn.addEventListener('click', ()=>{
+      location.hash = '#/create?clone_id=' + invoice.id;
+    });
+  }
+
+  // Status select quick change (instant re-render without page flash)
   document.getElementById('statusSelect').addEventListener('change', (e)=>{
     const nextStatus = e.target.value;
     invoice.status = nextStatus;
@@ -2730,7 +2887,7 @@ function renderPreview(params){
     }
     setAll(DB.invoices, invoices);
     showToast('Status updated to ' + nextStatus);
-    location.reload();
+    renderPreview(params);
   });
 
   // Payment Modal Events
@@ -2742,7 +2899,7 @@ function renderPreview(params){
   document.getElementById('closePaymentModal').addEventListener('click', ()=> paymentModal.classList.remove('show'));
   document.getElementById('cancelPaymentModal').addEventListener('click', ()=> paymentModal.classList.remove('show'));
 
-  // Delete an installment
+  // Delete an installment (instant re-render)
   document.querySelectorAll('.delete-pay-btn').forEach(btn => {
     btn.addEventListener('click', ()=>{
       const pIdx = Number(btn.dataset.pidx);
@@ -2751,11 +2908,11 @@ function renderPreview(params){
       invoice.status = getInvoiceEffectiveStatus(invoice);
       setAll(DB.invoices, invoices);
       showToast('Payment record removed.');
-      location.reload();
+      renderPreview(params);
     });
   });
 
-  // Add Payment Form submit
+  // Add Payment Form submit (instant re-render)
   document.getElementById('paymentForm').addEventListener('submit', (e)=>{
     e.preventDefault();
     const amount = Number(document.getElementById('pay_amt').value) || 0;
@@ -2784,7 +2941,7 @@ function renderPreview(params){
     setAll(DB.invoices, invoices);
     paymentModal.classList.remove('show');
     showToast('Payment recorded successfully!');
-    location.reload();
+    renderPreview(params);
   });
 
   // Email Modal Events
