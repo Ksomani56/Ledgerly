@@ -569,15 +569,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
 function appShell(activePath, title, eyebrow, contentHTML){
   const user = currentUser();
   const currentTheme = getTheme();
-  const themeLabel = currentTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+  const themeLabel = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
 
   const nav = [
     {path:'/dashboard', label:'Dashboard', ico:'D'},
     {path:'/create', label:'New Invoice', ico:'+'},
     {path:'/history', label:'Invoices &amp; Quotes', ico:'I'},
     {path:'/customers', label:'Customers', ico:'C'},
-    {path:'/items', label:'Item Catalog', ico:'📦'},
-    {path:'/expenses', label:'Expenses', ico:'💸'},
+    {path:'/items', label:'Item Catalog', ico:'T'},
+    {path:'/expenses', label:'Expenses', ico:'X'},
     {path:'/enterprise', label:'Enterprise', ico:'E'},
     {path:'/profile', label:'Profile', ico:'P'},
   ];
@@ -627,7 +627,7 @@ function mountShellEvents(){
     themeBtn.addEventListener('click', ()=>{
       const nextTheme = getTheme() === 'dark' ? 'light' : 'dark';
       setTheme(nextTheme);
-      themeBtn.textContent = nextTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+      themeBtn.textContent = nextTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
       showToast(`Switched to ${nextTheme} mode.`);
     });
   }
@@ -921,7 +921,7 @@ function renderDashboard(){
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <a href="#/create" class="btn btn-brass">+ New Invoice</a>
         <a href="#/create?type=estimate" class="btn btn-ghost" style="border-color:rgba(255,255,255,0.4);color:#fff;">+ New Estimate</a>
-        <button id="quickCsvBtn" class="btn btn-ghost" style="border-color:rgba(255,255,255,0.4);color:#fff;">📊 Export CSV</button>
+        <button id="quickCsvBtn" class="btn btn-ghost" style="border-color:rgba(255,255,255,0.4);color:#fff;">Export CSV</button>
       </div>
     </div>
 
@@ -1011,7 +1011,7 @@ function renderDashboard(){
       <div class="card" style="padding:22px 24px;">
         <div class="section-head">
           <h2>Recent Documents</h2>
-          <a class="see-all" href="#/history">View all →</a>
+          <a class="see-all" href="#/history">View all </a>
         </div>
         <table class="ledger-table">
           <thead>
@@ -1191,7 +1191,7 @@ function renderCreateInvoice(params){
           <!-- Recurring Retainer Toggle -->
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;margin-left:8px;">
             <input type="checkbox" id="doc_is_recurring" ${invoice?.isRecurring ? 'checked' : ''}>
-            🔁 Recurring Retainer
+            Recurring Retainer
           </label>
           <select id="doc_recur_freq" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:12px;${invoice?.isRecurring?'':'display:none;'}">
             <option value="Monthly" ${invoice?.recurFreq==='Monthly'?'selected':''}>Monthly</option>
@@ -1238,7 +1238,7 @@ function renderCreateInvoice(params){
               ${getEntOptionsHtml(defaultEnt?.id)}
             </select>
             <button type="button" class="btn-xs" id="quickAddEntBtn" title="Create new enterprise profile">+ New</button>
-            <button type="button" class="btn-xs" id="saveAsEntBtn" title="Save filled details as a reusable Enterprise Profile">💾 Save Profile</button>
+            <button type="button" class="btn-xs" id="saveAsEntBtn" title="Save filled details as a reusable Enterprise Profile"> Save Profile</button>
           </div>
         </h3>
         <div class="field"><label>Business / Company Name</label><input id="s_name" value="${escapeHTML(seller.name)}" placeholder="Your Enterprise Name"></div>
@@ -1279,7 +1279,7 @@ function renderCreateInvoice(params){
               ${getCustOptionsHtml(preloadedCust?.id)}
             </select>
             <button type="button" class="btn-xs" id="quickAddCustBtn" title="Create new customer profile">+ New</button>
-            <button type="button" class="btn-xs" id="saveAsCustBtn" title="Save filled details as a reusable Customer Profile">💾 Save Profile</button>
+            <button type="button" class="btn-xs" id="saveAsCustBtn" title="Save filled details as a reusable Customer Profile"> Save Profile</button>
           </div>
         </h3>
         <div class="field" id="f-c_name"><label>Customer / Client Name *</label><input id="c_name" value="${escapeHTML(customer.name)}" placeholder="Client or Company Name"><div class="field-error">Customer name is required.</div></div>
@@ -1321,14 +1321,14 @@ function renderCreateInvoice(params){
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
         <h3 style="margin:0;">Products &amp; Services</h3>
         <div class="quick-catalog-bar" style="margin:0;">
-          <span style="font-size:12.5px;font-weight:700;color:var(--teal-dark);">⚡ Add from Catalog:</span>
+          <span style="font-size:12.5px;font-weight:700;color:var(--teal-dark);">Add from Catalog:</span>
           <select id="catalogPicker" class="btn btn-ghost btn-sm" style="padding:5px 8px;font-size:12.5px;">
             <option value="">-- Choose Item from Inventory / Catalog --</option>
             ${getAll(DB.items).filter(it => it.userId === user.id).map(it => `
               <option value="${it.id}">${escapeHTML(it.name)} (${fmtMoney(it.price, currencySymbol)}) - HSN: ${it.hsn||'N/A'}</option>
             `).join('')}
           </select>
-          <a href="#/items" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:4px 8px;">Manage Catalog ↗</a>
+          <a href="#/items" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:4px 8px;">Manage Catalog</a>
         </div>
       </div>
       <div style="overflow-x:auto;">
@@ -2116,7 +2116,7 @@ function renderPreview(params){
     <div class="paid-receipt-banner">
       <div class="banner-head">
         <div class="banner-title">
-          <span style="font-size:18px;">✓</span> Payment Received &amp; Settled
+          <span style="font-size:18px;"></span> Payment Received &amp; Settled
         </div>
         <div class="banner-badge">OFFICIAL RECEIPT</div>
       </div>
@@ -2149,7 +2149,7 @@ function renderPreview(params){
     <div class="partial-payment-banner">
       <div class="banner-head">
         <div class="banner-title">
-          <span>⏳</span> Partial Payment Received
+          <span></span> Partial Payment Received
         </div>
         <div class="banner-badge">PARTIALLY PAID</div>
       </div>
@@ -2374,18 +2374,18 @@ function renderPreview(params){
         <select id="statusSelect" class="btn btn-ghost btn-sm" style="padding:7px 10px;">${statusOptions}</select>
         ${!isEstimate ? `
         <button class="btn ${isPaid ? 'btn-ghost' : 'btn-success'} btn-sm" id="recordPaymentBtn">
-          ${isPaid ? '⚙ Payment Records' : '💳 Record / Manage Payments'}
+          ${isPaid ? 'Payment Records' : 'Record / Manage Payments'}
         </button>` : `
-        <button class="btn btn-primary btn-sm" id="convertEstimateBtn">🔄 Convert to Invoice</button>`}
+        <button class="btn btn-primary btn-sm" id="convertEstimateBtn">Convert to Invoice</button>`}
         ${invoice.isRecurring ? `
         <button class="btn btn-brass btn-sm" id="renewRecurringBtn" title="Clone and advance invoice date for next billing cycle">
-          🔁 Renew for Next Period
+          Renew for Next Period
         </button>` : ''}
       </div>
       <div class="left">
-        <a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm" id="waShareBtn">💬 WhatsApp Share</a>
-        <button class="btn btn-ghost btn-sm" id="emailBtn">✉ Email ${isPaid ? 'Receipt' : 'Doc'}</button>
-        <button class="btn btn-ghost btn-sm" id="downloadPdfBtn">📄 Download PDF</button>
+        <a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm" id="waShareBtn">WhatsApp Share</a>
+        <button class="btn btn-ghost btn-sm" id="emailBtn">Email ${isPaid ? 'Receipt' : 'Doc'}</button>
+        <button class="btn btn-ghost btn-sm" id="downloadPdfBtn">Download PDF</button>
         <button class="btn btn-primary btn-sm" id="printBtn">Print</button>
       </div>
     </div>
@@ -2688,7 +2688,7 @@ function renderHistory(){
         <option value="Overdue">Overdue Bills</option>
       </select>
       <input type="date" id="dateFilter" title="Filter by date">
-      <button class="btn btn-ghost" id="historyCsvBtn" style="white-space:nowrap;">📊 Export CSV</button>
+      <button class="btn btn-ghost" id="historyCsvBtn" style="white-space:nowrap;">Export CSV</button>
     </div>
     <div class="card" style="padding:22px 24px;">
       <table class="ledger-table">
@@ -2845,10 +2845,10 @@ function renderCustomers(){
           <div>
             <div class="title">${escapeHTML(c.name)}</div>
             ${c.contactPerson ? `<div class="subtitle">Contact: ${escapeHTML(c.contactPerson)}</div>` : ''}
-            ${c.email ? `<div class="meta-item">✉ ${escapeHTML(c.email)}</div>` : ''}
-            ${c.phone ? `<div class="meta-item">📞 ${escapeHTML(c.phone)}</div>` : ''}
-            ${c.address ? `<div class="meta-item">📍 ${escapeHTML(c.address)}</div>` : ''}
-            ${c.taxId ? `<div class="meta-item">💳 GST/Tax: <span class="mono">${escapeHTML(c.taxId)}</span></div>` : ''}
+            ${c.email ? `<div class="meta-item">Email: ${escapeHTML(c.email)}</div>` : ''}
+            ${c.phone ? `<div class="meta-item">Phone: ${escapeHTML(c.phone)}</div>` : ''}
+            ${c.address ? `<div class="meta-item">Address: ${escapeHTML(c.address)}</div>` : ''}
+            ${c.taxId ? `<div class="meta-item">GST/Tax: <span class="mono">${escapeHTML(c.taxId)}</span></div>` : ''}
 
             <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;display:flex;justify-content:space-between;">
               <span>Total Billed: <strong class="mono">${fmtMoney(cBilled)}</strong></span>
@@ -2857,7 +2857,7 @@ function renderCustomers(){
           </div>
           <div class="card-actions">
             <a href="#/create?cust_id=${c.id}" class="btn btn-primary btn-sm" style="text-decoration:none;">+ Invoice</a>
-            <button class="btn btn-ghost btn-sm stat-c-btn" data-id="${c.id}">📜 Statement</button>
+            <button class="btn btn-ghost btn-sm stat-c-btn" data-id="${c.id}">Statement</button>
             <button class="btn btn-ghost btn-sm edit-c-btn" data-id="${c.id}">Edit</button>
             <button class="btn btn-danger btn-sm del-c-btn" data-id="${c.id}">Delete</button>
           </div>
@@ -3148,10 +3148,10 @@ function renderEnterprise(){
             ${e.isDefault ? `<span class="badge">Default</span>` : ''}
           </div>
           ${e.tagline ? `<div class="subtitle">${escapeHTML(e.tagline)}</div>` : ''}
-          ${e.email ? `<div class="meta-item">✉ ${escapeHTML(e.email)}</div>` : ''}
-          ${e.phone ? `<div class="meta-item">📞 ${escapeHTML(e.phone)}</div>` : ''}
-          ${e.upiId ? `<div class="meta-item">📱 UPI: <span class="mono">${escapeHTML(e.upiId)}</span></div>` : ''}
-          ${e.bankName ? `<div class="meta-item">🏦 ${escapeHTML(e.bankName)} (${escapeHTML(e.accountNumber || '')})</div>` : ''}
+          ${e.email ? `<div class="meta-item">Email: ${escapeHTML(e.email)}</div>` : ''}
+          ${e.phone ? `<div class="meta-item">Phone: ${escapeHTML(e.phone)}</div>` : ''}
+          ${e.upiId ? `<div class="meta-item">UPI: <span class="mono">${escapeHTML(e.upiId)}</span></div>` : ''}
+          ${e.bankName ? `<div class="meta-item">Bank: ${escapeHTML(e.bankName)} (${escapeHTML(e.accountNumber || '')})</div>` : ''}
         </div>
         <div class="card-actions">
           <a href="#/create?ent_id=${e.id}" class="btn btn-primary btn-sm" style="text-decoration:none;">+ Invoice</a>
@@ -3324,11 +3324,11 @@ function renderProfile(){
       <p class="helper-text" style="margin-bottom:16px;">Download all your records as a secure JSON backup file, export your complete invoices ledger as CSV, or restore an earlier backup onto this machine.</p>
 
       <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-        <button type="button" class="btn btn-ghost btn-sm" id="profBackupBtn">📥 Export Full Backup (JSON)</button>
-        <button type="button" class="btn btn-ghost btn-sm" id="profCsvBtn">📊 Export All Invoices (CSV)</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="profBackupBtn">Export Full Backup (JSON)</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="profCsvBtn">Export All Invoices (CSV)</button>
 
         <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0;">
-          📂 Restore Backup (JSON)
+          Restore Backup (JSON)
           <input type="file" id="restoreFileInput" accept=".json" style="display:none;">
         </label>
       </div>
@@ -3416,7 +3416,7 @@ function renderCatalog(){
     <div class="filter-bar">
       <input type="text" id="catSearch" placeholder="Search catalog items by name, HSN, or description...">
       <button class="btn btn-primary" id="openAddItemModal" style="white-space:nowrap;">+ Add New Item</button>
-      <button class="btn btn-ghost" id="exportCatalogCsvBtn" style="white-space:nowrap;">📊 Export Catalog</button>
+      <button class="btn btn-ghost" id="exportCatalogCsvBtn" style="white-space:nowrap;">Export Catalog (CSV)</button>
     </div>
 
     <!-- Catalog Summary KPIs -->
@@ -3651,7 +3651,7 @@ function renderExpenses(){
         <option value="Misc">Miscellaneous</option>
       </select>
       <button class="btn btn-primary" id="openAddExpModal" style="white-space:nowrap;">+ Log Expense</button>
-      <button class="btn btn-ghost" id="exportExpCsvBtn" style="white-space:nowrap;">📊 Export CSV</button>
+      <button class="btn btn-ghost" id="exportExpCsvBtn" style="white-space:nowrap;">Export CSV</button>
     </div>
 
     <!-- Expenses Summary KPIs -->

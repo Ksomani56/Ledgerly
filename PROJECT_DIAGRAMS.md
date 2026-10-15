@@ -4,7 +4,7 @@ This document contains a comprehensive architectural and engineering diagram sui
 
 All 14 diagrams are rendered as **Ultra-HD High-Resolution PNG images** and **lossless vector SVG files** in the [`Project Diagrams/`](file:///c:/Users/Krushna/Documents/Projects/Invoice%20Generator/Project%20Diagrams) folder.
 
-### 📁 Rendered Diagram Directory
+###  Rendered Diagram Directory
 
 | # | Diagram Title | High-Res PNG Image | Lossless Vector SVG |
 |---|---|---|---|
@@ -455,7 +455,7 @@ graph TD
 
     subgraph Shell["Shared Shell (appShell)"]
         Sidebar["Sidebar Navigation\n- Logo & Branding\n- Nav Links (/dashboard, /create, /history, /customers, /enterprise, /profile)\n- User Card & Logout"]
-        Topbar["Top Bar\n- Eyebrow & View Title\n- Theme Toggle (☀️ / 🌙)\n- Quick Action Button"]
+        Topbar["Top Bar\n- Eyebrow & View Title\n- Theme Toggle ( / )\n- Quick Action Button"]
         MainContent["Main View Content Area"]
     end
 

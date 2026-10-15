@@ -26,7 +26,7 @@ DIAGRAMS = [
         "filename": "01_system_architecture",
         "title": "High-Level System Architecture",
         "code": """flowchart TD
-    subgraph Client["🖥️ CLIENT APPLICATION RUNTIME (Vanilla JS Single Page App)"]
+    subgraph Client[" CLIENT APPLICATION RUNTIME (Vanilla JS Single Page App)"]
         direction TB
 
         subgraph UI["1. PRESENTATION LAYER"]
@@ -60,7 +60,7 @@ DIAGRAMS = [
         end
     end
 
-    subgraph Ext["🌐 EXTERNAL INTEGRATIONS & SUBSYSTEMS"]
+    subgraph Ext[" EXTERNAL INTEGRATIONS & SUBSYSTEMS"]
         direction LR
         API1["api.qrserver.com<br/><b>Dynamic QR Code Generator</b>"]
         API2["mailto: Protocol<br/><b>Native Mail Client Handler</b>"]
@@ -172,15 +172,15 @@ DIAGRAMS = [
         "filename": "03_navigation_state_machine",
         "title": "Application State & Route Navigation State Machine",
         "code": """flowchart TD
-    Start([🚀 User Opens App]) --> AuthCheck{Active Session Found?}
+    Start([ User Opens App]) --> AuthCheck{Active Session Found?}
 
-    subgraph Public["🔓 Public Authentication Views"]
+    subgraph Public[" Public Authentication Views"]
         Login["<b>#/login</b><br/>User Login View<br/>Email & Password Verification"]
         Register["<b>#/register</b><br/>User Signup View<br/>Account Registration & Auto-Login"]
         Login <-->|"Switch Form"| Register
     end
 
-    subgraph Guarded["🔒 Guarded Application Shell (appShell)"]
+    subgraph Guarded[" Guarded Application Shell (appShell)"]
         Dashboard["<b>#/dashboard</b><br/>Main Dashboard<br/>KPI Cards & Recent Invoices"]
         Create["<b>#/create</b><br/>Invoice Builder<br/>Live Math, Autofill & Signature"]
         Edit["<b>#/edit?id={id}</b><br/>Edit Invoice<br/>Modify Existing Invoice"]
@@ -345,11 +345,11 @@ DIAGRAMS = [
         "filename": "08_dfd_level_0_context_diagram",
         "title": "Data Flow Diagram — Level 0 Context Diagram",
         "code": """flowchart LR
-    User["👤 Business Owner / User"]
+    User[" Business Owner / User"]
     System(("Ledgerly Invoice Generator System"))
-    Client["👥 Customer / Client"]
-    QRApi["🌐 QR Code Generator API"]
-    MailClient["✉ Native Mail Client"]
+    Client[" Customer / Client"]
+    QRApi[" QR Code Generator API"]
+    MailClient[" Native Mail Client"]
 
     User -->|"1. Credentials, Profiles, Line Items & Signature"| System
     System -->|"A. Dashboard Analytics & Invoices Ledger"| User
@@ -367,7 +367,7 @@ DIAGRAMS = [
         "filename": "09_dfd_level_1_decomposition",
         "title": "Data Flow Diagram — Level 1 Functional Decomposition",
         "code": """flowchart TD
-    User["👤 Business Owner / User"]
+    User[" Business Owner / User"]
 
     subgraph Processes["System Core Processes"]
         P1(("1.0<br>Authentication &<br>Session Management"))
@@ -402,12 +402,12 @@ DIAGRAMS = [
     User -->|Canvas Vector Signature| P4
     D3 -->|UPI ID / Payment URL| P4
     P4 -->|Signature Base64| D5
-    P4 -->|Payment String| ExtQR["🌐 api.qrserver.com"]
+    P4 -->|Payment String| ExtQR[" api.qrserver.com"]
     ExtQR -->|QR Image Stream| P5
 
     D5 -->|Invoice Object| P5
     P5 -->|Print View / PDF Document| User
-    P5 -->|Mail Subject & Body| ExtMail["✉ Mail Client (mailto:)"]
+    P5 -->|Mail Subject & Body| ExtMail[" Mail Client (mailto:)"]
 
     User -->|Payment Date, Method, UTR Ref| P6
     P6 -->|Update Status: Paid + Settlement Meta| D5
@@ -421,7 +421,7 @@ DIAGRAMS = [
 
     subgraph Shell["Shared Shell (appShell)"]
         Sidebar["Sidebar Navigation\n- Ledgerly Logo & Branding\n- Nav Links (Dashboard, New, History, Customers, Enterprise, Profile)\n- User Info & Logout Button"]
-        Topbar["Top Bar\n- Section Eyebrow & Title\n- Theme Switcher (☀️ / 🌙)\n- Quick Action Trigger Button"]
+        Topbar["Top Bar\n- Section Eyebrow & Title\n- Theme Switcher ( / )\n- Quick Action Trigger Button"]
         MainArea["Dynamic View Container"]
     end
 
@@ -464,17 +464,17 @@ DIAGRAMS = [
 
     Evaluator --> SuppressedElements
     Evaluator --> AppliedPrintStyles
-    SuppressedElements --> Output["🖨️ Spooler / PDF Engine (Save as PDF)"]
+    SuppressedElements --> Output[" Spooler / PDF Engine (Save as PDF)"]
     AppliedPrintStyles --> Output"""
     },
     {
         "filename": "12_dfd_level_0_detailed_flow",
         "title": "DFD Level 0: Context Data Flow Diagram (from dfd_diagram.md)",
         "code": """flowchart TD
-    User["👤 Business Owner / User"]
+    User[" Business Owner / User"]
     System(("Ledgerly Invoice Generator System"))
-    Client["👥 Customer / Client"]
-    QRApi["🌐 QR Code Generator API"]
+    Client[" Customer / Client"]
+    QRApi[" QR Code Generator API"]
 
     User -->|"1. Login / Registration Credentials"| System
     User -->|"2. Customer & Enterprise Profiles"| System
@@ -496,9 +496,9 @@ DIAGRAMS = [
         "filename": "13_dfd_level_1_detailed_processes",
         "title": "DFD Level 1: Detailed Data Flow Diagram (from dfd_diagram.md)",
         "code": """flowchart LR
-    User["👤 Business Owner / User"]
-    QRApi["🌐 External QR Server API"]
-    EmailClient["✉ Client Mail App (mailto:)"]
+    User[" Business Owner / User"]
+    QRApi[" External QR Server API"]
+    EmailClient[" Client Mail App (mailto:)"]
 
     subgraph DataStores["Data Stores"]
         D1[("D1: ig_users")]

@@ -8,39 +8,39 @@
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-- **⚡ Instant Single-Page Architecture**: Fast, zero-lag client-side rendering with hash routing (`#/dashboard`, `#/create`, `#/preview`, `#/customers`).
-- **📶 Offline-First PWA**: Built with Service Workers (`sw.js`) and Web App Manifest (`manifest.json`) for seamless offline operation.
-- **💰 Smart Tax & Calculation Engine**:
+- ** Instant Single-Page Architecture**: Fast, zero-lag client-side rendering with hash routing (`#/dashboard`, `#/create`, `#/preview`, `#/customers`).
+- ** Offline-First PWA**: Built with Service Workers (`sw.js`) and Web App Manifest (`manifest.json`) for seamless offline operation.
+- ** Smart Tax & Calculation Engine**:
   - Itemized line items with HSN/SAC codes.
   - Automatic intra-state (CGST 9% + SGST 9%) vs. inter-state (IGST 18%) tax splitting.
   - Percentage or flat cash discounts.
   - Optional automated integer round-off.
-- **✍️ Digital Vector Signatures**: Built-in HTML5 2D canvas for drawing handwritten signatures directly on touchscreens or desktops.
-- **📱 Dynamic UPI QR Generation**: Generates standard UPI payment deep links (`upi://pay?pa=...&am=...`) as scannable QR codes.
-- **📊 Payment Settlement Ledger**: Record installment payments (Cash, UPI, NEFT, Card) with UTR transaction references, tracking real-time balance due.
-- **📄 Lossless PDF & Print Export**: Integrated `html2pdf.js` client-side compiler and dedicated `@media print` A4 physical sheet layouts.
-- **👥 Customer Directory & Statements**: Maintain customer records, billing addresses, and generate cumulative account statement ledgers.
-- **🔒 Complete Privacy & Data Ownership**: All financial records, enterprise profiles, and client data remain encrypted in your local browser storage with one-click JSON/CSV backup & restore.
+- ** Digital Vector Signatures**: Built-in HTML5 2D canvas for drawing handwritten signatures directly on touchscreens or desktops.
+- ** Dynamic UPI QR Generation**: Generates standard UPI payment deep links (`upi://pay?pa=...&am=...`) as scannable QR codes.
+- ** Payment Settlement Ledger**: Record installment payments (Cash, UPI, NEFT, Card) with UTR transaction references, tracking real-time balance due.
+- ** Lossless PDF & Print Export**: Integrated `html2pdf.js` client-side compiler and dedicated `@media print` A4 physical sheet layouts.
+- ** Customer Directory & Statements**: Maintain customer records, billing addresses, and generate cumulative account statement ledgers.
+- ** Complete Privacy & Data Ownership**: All financial records, enterprise profiles, and client data remain encrypted in your local browser storage with one-click JSON/CSV backup & restore.
 
 ---
 
-## 🏗️ System Architecture & Visual Diagrams
+## System Architecture & Visual Diagrams
 
 Complete system diagrams, state machines, sequence diagrams, and multi-level DFDs are documented in [`PROJECT_DIAGRAMS.md`](PROJECT_DIAGRAMS.md) and rendered as Ultra-HD PNG and SVG vectors in the [`Project Diagrams/`](Project%20Diagrams/) folder:
 
 1. **High-Level System Architecture**: Client-side layered architecture (Presentation, Router, Core Services, LocalStorage).
 2. **Entity-Relationship Diagram (ERD)**: Data relationships between Users, Enterprises, Invoices, Line Items, and Customers.
 3. **Route Navigation State Machine**: Role-based access control and navigation flow.
-4. **Invoice Lifecycle State Machine**: Workflow transitions (`Draft` → `Generated` → `Partially Paid` → `Paid`).
+4. **Invoice Lifecycle State Machine**: Workflow transitions (`Draft`  `Generated`  `Partially Paid`  `Paid`).
 5. **Sequence Diagrams**: Auth & Session flow, Invoice Builder & Signature capture, Payment & Receipt dispatch.
 6. **Data Flow Diagrams (DFD)**: Level 0 Context Diagram, Level 1 Functional Decomposition, and Level 2 Settlement Pipeline.
 7. **Component UI Hierarchy**: Breakdown of visual components and DOM hierarchy.
 
 ---
 
-## 🧪 Automated Testing
+## Automated Testing
 
 Ledgerly includes an automated unit test suite implemented in Python covering calculation math, GST tax splits, round-off boundaries, payment states, and registration input validation:
 
@@ -53,7 +53,7 @@ All 12 automated unit tests pass with 100% test coverage.
 
 ---
 
-## 📚 Academic Lab Manual Suite
+## Academic Lab Manual Suite
 
 The project includes 13 complete, individually formatted Word documents (`.docx`) in the [`Lab Manual Docs/`](Lab%20Manual%20Docs/) directory covering the Software Engineering & Web Development syllabus:
 
@@ -73,7 +73,7 @@ The project includes 13 complete, individually formatted Word documents (`.docx`
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 Simply open `index.html` in any modern web browser or serve it with any local static HTTP server:
 
@@ -86,6 +86,6 @@ Navigate to `http://localhost:8000` to launch Ledgerly.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License — see the LICENSE file for details.

@@ -63,7 +63,7 @@ This document contains structured, tabular test cases for **Ledgerly (Invoice & 
 | **TC-PRV-01** | Preview | Template switching & styling | Saved invoice | 1. Inspect template dropdown / classes on `#invoiceSheet` | Applies matching class (`theme-classic`, `theme-navy`, `theme-minimal`, `theme-compact`) with appropriate layout, typography, and borders. | **P2** |
 | **TC-PRV-02** | Preview | Logo rendering in invoice header | Invoice seller has logo data URL | 1. Open invoice preview | Logo renders inside `.sheet-logo-container` at proper proportions without distortion. | **P2** |
 | **TC-PRV-03** | Preview | Dynamic QR code generation | Invoice with UPI ID and grand total | 1. Open preview of unpaid invoice | QR code image loads from `api.qrserver.com` with encoded UPI string (`upi://pay?pa=...&am=...`). | **P1** |
-| **TC-PRV-04** | Preview | Direct PDF download (`html2pdf.js`) | User on `#/preview?id=...` | 1. Click "📄 Download PDF" button | `html2pdf.js` compiles `#invoiceSheet` into a downloaded PDF file (`INV-YYYY-XXX.pdf`) with proper margins. | **P1** |
+| **TC-PRV-04** | Preview | Direct PDF download (`html2pdf.js`) | User on `#/preview?id=...` | 1. Click " Download PDF" button | `html2pdf.js` compiles `#invoiceSheet` into a downloaded PDF file (`INV-YYYY-XXX.pdf`) with proper margins. | **P1** |
 | **TC-PRV-05** | Preview | Browser print layout | User on `#/preview?id=...` | 1. Click "Print" button / press `Ctrl+P` | Opens print dialog; toolbar and app shell hidden (`no-print`), clean invoice sheet on white paper. | **P1** |
 
 ---
@@ -83,10 +83,10 @@ This document contains structured, tabular test cases for **Ledgerly (Invoice & 
 
 | Test ID | Module | Scenario / Description | Preconditions & Test Data | Test Steps | Expected Result | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-FLOW-01** | Workflow | 1-Click Quotation to Invoice conversion | Document is an Estimate (`EST-...`) | 1. Open Estimate preview<br>2. Click "🔄 Convert to Invoice"<br>3. Confirm prompt | Document type changes to `invoice`, receives fresh invoice number (`INV-...`), status changes to `Generated`. | **P1** |
+| **TC-FLOW-01** | Workflow | 1-Click Quotation to Invoice conversion | Document is an Estimate (`EST-...`) | 1. Open Estimate preview<br>2. Click " Convert to Invoice"<br>3. Confirm prompt | Document type changes to `invoice`, receives fresh invoice number (`INV-...`), status changes to `Generated`. | **P1** |
 | **TC-FLOW-02** | Workflow | Overdue detection and badge display | Invoice with `dueDate` in the past and balance > 0 | 1. View invoice in Dashboard, Preview, or History | Red overdue badge displayed indicating elapsed overdue days (e.g. `+12d Overdue`). | **P1** |
-| **TC-FLOW-03** | Sharing | 1-Click WhatsApp Share link | Invoice with customer phone number | 1. Click "💬 WhatsApp Share" on preview | Generates formatted `https://wa.me/{phone}?text=...` URL with invoice number, amount, balance, due date, and UPI ID. | **P1** |
-| **TC-FLOW-04** | Sharing | Precomposed Email dispatch | Invoice preview | 1. Click "✉ Email" button | Opens modal with prefilled recipient, subject, and professional message body, with `mailto:` link. | **P2** |
+| **TC-FLOW-03** | Sharing | 1-Click WhatsApp Share link | Invoice with customer phone number | 1. Click " WhatsApp Share" on preview | Generates formatted `https://wa.me/{phone}?text=...` URL with invoice number, amount, balance, due date, and UPI ID. | **P1** |
+| **TC-FLOW-04** | Sharing | Precomposed Email dispatch | Invoice preview | 1. Click " Email" button | Opens modal with prefilled recipient, subject, and professional message body, with `mailto:` link. | **P2** |
 
 ---
 
@@ -95,7 +95,7 @@ This document contains structured, tabular test cases for **Ledgerly (Invoice & 
 | Test ID | Module | Scenario / Description | Preconditions & Test Data | Test Steps | Expected Result | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TC-CUST-01** | Customers | Customer profile CRUD | On `#/customers` | 1. Click "+ Add Customer"<br>2. Fill details and save<br>3. Edit details<br>4. Delete profile | Customer creates, appears in directory grid with contact details, updates correctly, and deletes with confirmation. | **P1** |
-| **TC-CUST-02** | Customers | Account Statement modal opening | Customer with multiple past invoices | 1. Click "📜 Statement" button on customer card | Modal opens showing Lifetime Billed, Total Payments Received, Current Balance Due, and transaction list. | **P1** |
+| **TC-CUST-02** | Customers | Account Statement modal opening | Customer with multiple past invoices | 1. Click " Statement" button on customer card | Modal opens showing Lifetime Billed, Total Payments Received, Current Balance Due, and transaction list. | **P1** |
 | **TC-CUST-03** | Customers | Statement printing | Customer statement modal opened | 1. Click "Print Statement" | Triggers clean browser print dialog with full customer transaction ledger. | **P2** |
 
 ---
@@ -104,7 +104,7 @@ This document contains structured, tabular test cases for **Ledgerly (Invoice & 
 
 | Test ID | Module | Scenario / Description | Preconditions & Test Data | Test Steps | Expected Result | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-DATA-01** | Export | Export Invoices to CSV | Invoices exist in database | 1. Click "📊 Export CSV" from Dashboard or History | Browser downloads `.csv` file containing all invoice columns, amounts, balances, and customer details. | **P1** |
-| **TC-DATA-02** | Backup | Full JSON system backup download | Database populated with users, enterprises, customers, invoices | 1. Go to `#/profile`<br>2. Click "📥 Export Full Backup (JSON)" | Browser downloads `ledgerly-backup-YYYY-MM-DD.json` containing entire state. | **P1** |
-| **TC-DATA-03** | Restore | JSON database restore | Valid backup JSON file | 1. Go to `#/profile`<br>2. Select backup file via "📂 Restore Backup (JSON)" | Database in `localStorage` is restored, validation succeeds, and app reloads with restored state. | **P1** |
+| **TC-DATA-01** | Export | Export Invoices to CSV | Invoices exist in database | 1. Click " Export CSV" from Dashboard or History | Browser downloads `.csv` file containing all invoice columns, amounts, balances, and customer details. | **P1** |
+| **TC-DATA-02** | Backup | Full JSON system backup download | Database populated with users, enterprises, customers, invoices | 1. Go to `#/profile`<br>2. Click " Export Full Backup (JSON)" | Browser downloads `ledgerly-backup-YYYY-MM-DD.json` containing entire state. | **P1** |
+| **TC-DATA-03** | Restore | JSON database restore | Valid backup JSON file | 1. Go to `#/profile`<br>2. Select backup file via " Restore Backup (JSON)" | Database in `localStorage` is restored, validation succeeds, and app reloads with restored state. | **P1** |
 | **TC-DATA-04** | PWA | Service worker and offline capability | Browser with service worker support | 1. Disconnect network / toggle Offline in DevTools<br>2. Reload page | Service worker serves cached assets; app functions completely offline without connection errors. | **P2** |
