@@ -619,7 +619,50 @@ input,select,textarea{font-family:var(--font-body);}
   padding:12px 18px;border-radius:var(--radius);font-size:13.5px;box-shadow:var(--shadow-md);
   opacity:0;transform:translateY(8px);transition:all .25s ease;pointer-events:none;z-index:999;
 }
-.toast.show{opacity:1;transform:translateY(0);}
+/* ============================================================
+   BUSINESS & ACCOUNTING PRO FEATURES (CATALOG, EXPENSES, RECURRING)
+   ============================================================ */
+.badge-recurring {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(184, 134, 11, 0.15); color: #8a6408;
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+}
+.badge-category {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.cat-software { background: #e0f2fe; color: #0369a1; }
+.cat-hosting { background: #f3e8ff; color: #7e22ce; }
+.cat-office { background: #fef3c7; color: #b45309; }
+.cat-marketing { background: #fce7f3; color: #be185d; }
+.cat-hardware { background: #e2e8f0; color: #334155; }
+.cat-misc { background: #f1f5f9; color: #475569; }
+
+.catalog-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-top: 16px;
+}
+.catalog-card {
+  background: var(--paper-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); padding: 18px 20px; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.catalog-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.catalog-card h3 { margin: 0 0 6px; font-size: 16px; }
+.catalog-card p { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); flex: 1; }
+.catalog-meta { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 8px; }
+.catalog-price { font-size: 17px; font-family: var(--font-mono); font-weight: 700; color: var(--teal-dark); }
+
+.quick-catalog-bar {
+  display: flex; align-items: center; gap: 10px; background: var(--paper);
+  padding: 10px 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius);
+  margin-bottom: 12px; flex-wrap: wrap;
+}
+.quick-catalog-bar select { flex: 1; min-width: 200px; }
+
+.profit-positive { color: #15803d !important; }
+.profit-negative { color: #b91c1c !important; }
 
 @media (max-width: 880px){
   .builder-grid{grid-template-columns:1fr;}

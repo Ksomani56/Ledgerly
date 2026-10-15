@@ -23,7 +23,9 @@ const DB = {
   session: 'ig_session',
   invoices: 'ig_invoices',
   customers: 'ig_customers',
-  enterprises: 'ig_enterprises'
+  enterprises: 'ig_enterprises',
+  items: 'ig_items',
+  expenses: 'ig_expenses'
 };
 
 const DEFAULT_ADMIN = {
@@ -88,6 +90,21 @@ const SAMPLE_CUSTOMERS = [
   }
 ];
 
+const SAMPLE_ITEMS = [
+  { id: 'item_1', userId: 'u_admin', name: 'Web Application Development', desc: 'Custom frontend & backend full-stack development', hsn: '998314', unit: 'hrs', price: 1500, taxRate: 18 },
+  { id: 'item_2', userId: 'u_admin', name: 'UI/UX Design & Prototyping', desc: 'Figma wireframes, responsive mobile UI and brand assets', hsn: '998311', unit: 'screens', price: 2500, taxRate: 18 },
+  { id: 'item_3', userId: 'u_admin', name: 'Cloud Infrastructure & DevOps', desc: 'AWS/GCP setup, Docker containers and CI/CD pipelines', hsn: '998313', unit: 'hrs', price: 2000, taxRate: 18 },
+  { id: 'item_4', userId: 'u_admin', name: 'Annual Software Maintenance (SLA)', desc: 'Bug fixes, security updates, and database backup monitoring', hsn: '998319', unit: 'mo', price: 8000, taxRate: 18 },
+  { id: 'item_5', userId: 'u_admin', name: 'Technical Consultation & Code Audit', desc: 'Architecture review, security vulnerability assessment', hsn: '998312', unit: 'sessions', price: 5000, taxRate: 18 }
+];
+
+const SAMPLE_EXPENSES = [
+  { id: 'exp_1', userId: 'u_admin', title: 'AWS Cloud Hosting & Databases', category: 'Hosting', amount: 3200, date: '2026-09-15', vendor: 'Amazon Web Services', method: 'Credit Card', ref: 'AWS-INV-99231' },
+  { id: 'exp_2', userId: 'u_admin', title: 'Figma Professional Team Plan', category: 'Software', amount: 1500, date: '2026-09-22', vendor: 'Figma Inc.', method: 'UPI', ref: 'UPI-FIGMA-4421' },
+  { id: 'exp_3', userId: 'u_admin', title: 'High-Speed Fiber Internet & Backup', category: 'Office', amount: 1200, date: '2026-10-02', vendor: 'Airtel Broadband', method: 'Net Banking', ref: 'AIR-OCT-091' },
+  { id: 'exp_4', userId: 'u_admin', title: 'Google Workspace Email Business Starter', category: 'Software', amount: 800, date: '2026-10-05', vendor: 'Google India', method: 'Credit Card', ref: 'GSUITE-10829' }
+];
+
 function getAll(key){
   try{
     const data = JSON.parse(localStorage.getItem(key));
@@ -115,11 +132,29 @@ function getAll(key){
       }
       return items;
     }
+    if(key === DB.items){
+      let items = Array.isArray(data) ? data : [];
+      if(items.length === 0){
+        items = [...SAMPLE_ITEMS];
+        localStorage.setItem(DB.items, JSON.stringify(items));
+      }
+      return items;
+    }
+    if(key === DB.expenses){
+      let items = Array.isArray(data) ? data : [];
+      if(items.length === 0){
+        items = [...SAMPLE_EXPENSES];
+        localStorage.setItem(DB.expenses, JSON.stringify(items));
+      }
+      return items;
+    }
     return Array.isArray(data) ? data : [];
   }catch(e){
     if(key === DB.users) return [DEFAULT_ADMIN];
     if(key === DB.enterprises) return [...SAMPLE_ENTERPRISES];
     if(key === DB.customers) return [...SAMPLE_CUSTOMERS];
+    if(key === DB.items) return [...SAMPLE_ITEMS];
+    if(key === DB.expenses) return [...SAMPLE_EXPENSES];
     return [];
   }
 }
@@ -362,7 +397,9 @@ function exportFullBackupJSON(){
     users: getAll(DB.users),
     enterprises: getAll(DB.enterprises),
     customers: getAll(DB.customers),
-    invoices: getAll(DB.invoices)
+    invoices: getAll(DB.invoices),
+    items: getAll(DB.items),
+    expenses: getAll(DB.expenses)
   };
   const jsonStr = JSON.stringify(backup, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -388,6 +425,8 @@ function restoreBackupJSON(fileContent){
     if(Array.isArray(data.enterprises)) setAll(DB.enterprises, data.enterprises);
     if(Array.isArray(data.customers)) setAll(DB.customers, data.customers);
     if(Array.isArray(data.invoices)) setAll(DB.invoices, data.invoices);
+    if(Array.isArray(data.items)) setAll(DB.items, data.items);
+    if(Array.isArray(data.expenses)) setAll(DB.expenses, data.expenses);
     showToast('Database restored successfully!');
     setTimeout(()=> location.reload(), 800);
     return true;
@@ -489,6 +528,8 @@ const routes = {
   '/preview': guarded(renderPreview),
   '/history': guarded(renderHistory),
   '/customers': guarded(renderCustomers),
+  '/items': guarded(renderCatalog),
+  '/expenses': guarded(renderExpenses),
   '/enterprise': guarded(renderEnterprise),
   '/profile': guarded(renderProfile),
 };
@@ -535,6 +576,8 @@ function appShell(activePath, title, eyebrow, contentHTML){
     {path:'/create', label:'New Invoice', ico:'+'},
     {path:'/history', label:'Invoices &amp; Quotes', ico:'I'},
     {path:'/customers', label:'Customers', ico:'C'},
+    {path:'/items', label:'Item Catalog', ico:'📦'},
+    {path:'/expenses', label:'Expenses', ico:'💸'},
     {path:'/enterprise', label:'Enterprise', ico:'E'},
     {path:'/profile', label:'Profile', ico:'P'},
   ];
@@ -767,6 +810,14 @@ function renderDashboard(){
   const totalCollected = allInvoices.reduce((s,i)=> s + getInvoicePaidTotal(i), 0);
   const totalBalanceDue = allInvoices.reduce((s,i)=> s + getInvoiceBalance(i), 0);
 
+  // Business Expenses & Net Profit Calculations
+  const allExpenses = getAll(DB.expenses).filter(e => e.userId === user.id);
+  const totalExpenses = allExpenses.reduce((s,e) => s + (Number(e.amount)||0), 0);
+  const netProfit = totalCollected - totalExpenses;
+
+  // Recurring Retainers
+  const recurringInvoices = allInvoices.filter(i => i.isRecurring);
+
   // Overdue count and value
   const overdueInvoices = allInvoices.filter(i => {
     return getInvoiceBalance(i) > 0 && getOverdueDays(i.dueDate) > 0;
@@ -895,6 +946,16 @@ function renderDashboard(){
         <div class="label">Overdue Bills</div>
         <div class="value mono" style="color:#b82d18;">${overdueInvoices.length}</div>
         <div class="helper-text" style="margin-top:2px;">${fmtMoney(overdueValue)} past due</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Business Expenses</div>
+        <div class="value mono" style="color:#b82d18;">${fmtMoney(totalExpenses)}</div>
+        <div class="helper-text" style="margin-top:2px;">${allExpenses.length} Logged Receipts</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Net Operating Profit</div>
+        <div class="value mono ${netProfit >= 0 ? 'profit-positive' : 'profit-negative'}">${fmtMoney(netProfit)}</div>
+        <div class="helper-text" style="margin-top:2px;">Collected − Expenses</div>
       </div>
     </div>
 
@@ -1126,9 +1187,35 @@ function renderCreateInvoice(params){
             <option value="estimate" ${docType==='estimate'?'selected':''}>Quotation / Estimate</option>
             <option value="proforma" ${docType==='proforma'?'selected':''}>Proforma Invoice</option>
           </select>
+
+          <!-- Recurring Retainer Toggle -->
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;margin-left:8px;">
+            <input type="checkbox" id="doc_is_recurring" ${invoice?.isRecurring ? 'checked' : ''}>
+            🔁 Recurring Retainer
+          </label>
+          <select id="doc_recur_freq" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:12px;${invoice?.isRecurring?'':'display:none;'}">
+            <option value="Monthly" ${invoice?.recurFreq==='Monthly'?'selected':''}>Monthly</option>
+            <option value="Quarterly" ${invoice?.recurFreq==='Quarterly'?'selected':''}>Quarterly</option>
+            <option value="Annually" ${invoice?.recurFreq==='Annually'?'selected':''}>Annually</option>
+            <option value="Weekly" ${invoice?.recurFreq==='Weekly'?'selected':''}>Weekly</option>
+          </select>
         </div>
 
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <!-- Currency Selector -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-weight:700;font-size:13px;text-transform:uppercase;color:var(--ink-soft);">Currency:</label>
+            <select id="doc_currency" class="btn btn-ghost" style="padding:6px 10px;font-weight:600;">
+              <option value="INR (₹)" data-sym="₹" ${currencySymbol==='₹'?'selected':''}>INR (₹)</option>
+              <option value="USD ($)" data-sym="$" ${currencySymbol==='$'?'selected':''}>USD ($)</option>
+              <option value="EUR (€)" data-sym="€" ${currencySymbol==='€'?'selected':''}>EUR (€)</option>
+              <option value="GBP (£)" data-sym="£" ${currencySymbol==='£'?'selected':''}>GBP (£)</option>
+              <option value="AED (د.إ)" data-sym="د.إ" ${currencySymbol==='د.إ'?'selected':''}>AED (د.إ)</option>
+              <option value="CAD ($)" data-sym="CA$" ${currencySymbol==='CA$'?'selected':''}>CAD (CA$)</option>
+              <option value="AUD ($)" data-sym="AU$" ${currencySymbol==='AU$'?'selected':''}>AUD (AU$)</option>
+            </select>
+          </div>
+
           <label style="font-weight:700;font-size:13px;text-transform:uppercase;color:var(--ink-soft);">Sheet Template:</label>
           <select id="doc_template" class="btn btn-ghost" style="padding:6px 12px;font-weight:600;">
             <option value="classic" ${docTemplate==='classic'?'selected':''}>Classic Brass</option>
@@ -1231,7 +1318,19 @@ function renderCreateInvoice(params){
 
     <!-- Products / Services Line Items -->
     <div class="card builder-card">
-      <h3>Products &amp; Services</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+        <h3 style="margin:0;">Products &amp; Services</h3>
+        <div class="quick-catalog-bar" style="margin:0;">
+          <span style="font-size:12.5px;font-weight:700;color:var(--teal-dark);">⚡ Add from Catalog:</span>
+          <select id="catalogPicker" class="btn btn-ghost btn-sm" style="padding:5px 8px;font-size:12.5px;">
+            <option value="">-- Choose Item from Inventory / Catalog --</option>
+            ${getAll(DB.items).filter(it => it.userId === user.id).map(it => `
+              <option value="${it.id}">${escapeHTML(it.name)} (${fmtMoney(it.price, currencySymbol)}) - HSN: ${it.hsn||'N/A'}</option>
+            `).join('')}
+          </select>
+          <a href="#/items" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:4px 8px;">Manage Catalog ↗</a>
+        </div>
+      </div>
       <div style="overflow-x:auto;">
         <table class="items-table inv-builder-table" id="itemsTable">
           <thead>
@@ -1676,6 +1775,56 @@ function renderCreateInvoice(params){
     recalcTotals();
   });
 
+  // Quick Catalog Picker: Autofill into line items
+  const catalogPicker = document.getElementById('catalogPicker');
+  if(catalogPicker){
+    catalogPicker.addEventListener('change', (e)=>{
+      const itemId = e.target.value;
+      if(!itemId) return;
+      const catItems = getAll(DB.items).filter(it => it.userId === user.id);
+      const chosen = catItems.find(it => it.id === itemId);
+      if(chosen){
+        builderItems.push({
+          id: uid('item'),
+          name: chosen.name,
+          description: chosen.desc || '',
+          hsn: chosen.hsn || '',
+          qty: 1,
+          unit: chosen.unit || 'pcs',
+          price: Number(chosen.price) || 0,
+          taxPct: chosen.taxRate !== undefined ? Number(chosen.taxRate) : (defaultEntTaxRate || 18)
+        });
+        renderItemsBody();
+        recalcTotals();
+        showToast(`Added '${chosen.name}' from catalog.`);
+        e.target.value = '';
+      }
+    });
+  }
+
+  // Currency select change updates symbol throughout builder
+  const currencySelect = document.getElementById('doc_currency');
+  if(currencySelect){
+    currencySelect.addEventListener('change', (e)=>{
+      const selOpt = e.target.options[e.target.selectedIndex];
+      const newSym = selOpt.getAttribute('data-sym') || '₹';
+      const curInp = document.getElementById('i_currency');
+      if(curInp) curInp.value = newSym;
+      renderItemsBody();
+      recalcTotals();
+      showToast('Currency set to ' + e.target.value);
+    });
+  }
+
+  // Recurring Retainer toggle
+  const recurCheck = document.getElementById('doc_is_recurring');
+  const recurFreqSelect = document.getElementById('doc_recur_freq');
+  if(recurCheck && recurFreqSelect){
+    recurCheck.addEventListener('change', (e)=>{
+      recurFreqSelect.style.display = e.target.checked ? 'inline-block' : 'none';
+    });
+  }
+
   document.getElementById('i_discount').addEventListener('input', recalcTotals);
   document.getElementById('i_tax').addEventListener('input', recalcTotals);
   document.getElementById('i_extra').addEventListener('input', recalcTotals);
@@ -1847,6 +1996,8 @@ function handleSave(status, goToPreview, bPad){
     docType,
     template,
     currencySymbol,
+    isRecurring: document.getElementById('doc_is_recurring')?.checked || false,
+    recurFreq: document.getElementById('doc_recur_freq')?.value || 'Monthly',
     invoiceNumber: document.getElementById('i_number').value.trim() || nextDocNumber(user.id, docType),
     invoiceDate: document.getElementById('i_date').value || todayISO(),
     dueDate: document.getElementById('i_due').value || '',
@@ -2226,6 +2377,10 @@ function renderPreview(params){
           ${isPaid ? '⚙ Payment Records' : '💳 Record / Manage Payments'}
         </button>` : `
         <button class="btn btn-primary btn-sm" id="convertEstimateBtn">🔄 Convert to Invoice</button>`}
+        ${invoice.isRecurring ? `
+        <button class="btn btn-brass btn-sm" id="renewRecurringBtn" title="Clone and advance invoice date for next billing cycle">
+          🔁 Renew for Next Period
+        </button>` : ''}
       </div>
       <div class="left">
         <a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm" id="waShareBtn">💬 WhatsApp Share</a>
@@ -2383,6 +2538,44 @@ function renderPreview(params){
       setAll(DB.invoices, invoices);
       showToast('Converted to formal invoice: ' + invoice.invoiceNumber);
       location.hash = '#/preview?id=' + invoice.id;
+    });
+  }
+
+  // 1-Click Renew Recurring Retainer Invoice
+  const renewBtn = document.getElementById('renewRecurringBtn');
+  if(renewBtn){
+    renewBtn.addEventListener('click', ()=>{
+      const freq = invoice.recurFreq || 'Monthly';
+      if(!confirm(`Generate renewed ${freq} invoice for the next billing cycle?`)) return;
+
+      const newId = uid('inv');
+      const newNum = nextDocNumber(user.id, 'invoice');
+      const today = todayISO();
+
+      // Advance due date by 1 month
+      const dueDt = new Date();
+      dueDt.setDate(dueDt.getDate() + 15);
+      const newDue = dueDt.toISOString().slice(0, 10);
+
+      const renewed = {
+        ...JSON.parse(JSON.stringify(invoice)),
+        id: newId,
+        invoiceNumber: newNum,
+        invoiceDate: today,
+        dueDate: newDue,
+        status: 'Generated',
+        payments: [],
+        paidAt: null,
+        transactionRef: '',
+        createdAt: Date.now()
+      };
+
+      const allInvs = getAll(DB.invoices);
+      allInvs.unshift(renewed);
+      setAll(DB.invoices, allInvs);
+
+      showToast(`Renewed retainer: New invoice ${newNum} generated!`);
+      location.hash = '#/preview?id=' + newId;
     });
   }
 
@@ -3211,5 +3404,488 @@ function renderProfile(){
       restoreBackupJSON(evt.target.result);
     };
     reader.readAsText(file);
+  });
+}
+
+/* ================================================================
+   VIEW: ITEM CATALOG / INVENTORY (#/items)
+   ================================================================ */
+function renderCatalog(){
+  const user = currentUser();
+  const content = `
+    <div class="filter-bar">
+      <input type="text" id="catSearch" placeholder="Search catalog items by name, HSN, or description...">
+      <button class="btn btn-primary" id="openAddItemModal" style="white-space:nowrap;">+ Add New Item</button>
+      <button class="btn btn-ghost" id="exportCatalogCsvBtn" style="white-space:nowrap;">📊 Export Catalog</button>
+    </div>
+
+    <!-- Catalog Summary KPIs -->
+    <div class="stat-grid" style="margin-bottom:24px;">
+      <div class="card stat-card accent">
+        <div class="label">Total Catalog Items</div>
+        <div class="value mono" id="catTotalCount">0</div>
+        <div class="helper-text">Ready for 1-click billing</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Average Unit Price</div>
+        <div class="value mono" id="catAvgPrice">₹0.00</div>
+        <div class="helper-text">Standard inventory rate</div>
+      </div>
+    </div>
+
+    <div class="catalog-grid" id="catalogGrid"></div>
+
+    <!-- Add / Edit Item Modal -->
+    <div class="modal-overlay" id="itemModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2 id="itemModalTitle">Add Catalog Item</h2>
+          <button class="modal-close" id="closeItemModal">&times;</button>
+        </div>
+        <form id="itemForm">
+          <input type="hidden" id="edit_item_id">
+          <div class="field">
+            <label>Item Name / Service Title *</label>
+            <input id="item_name" required placeholder="e.g. Full-Stack Web Development">
+          </div>
+          <div class="field">
+            <label>Item Description / Scope</label>
+            <textarea id="item_desc" rows="2" placeholder="e.g. End-to-end custom responsive design and API implementation."></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>HSN / SAC Code</label>
+              <input id="item_hsn" class="mono" placeholder="998314">
+            </div>
+            <div class="field">
+              <label>Unit of Measure</label>
+              <select id="item_unit">
+                <option value="pcs">Pieces (pcs)</option>
+                <option value="hrs">Hours (hrs)</option>
+                <option value="days">Days (days)</option>
+                <option value="mo">Months (mo)</option>
+                <option value="screens">Screens</option>
+                <option value="units">Units</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Default Unit Price (₹) *</label>
+              <input type="number" id="item_price" required min="0" step="0.01" placeholder="1500.00">
+            </div>
+            <div class="field">
+              <label>Default GST / Tax Rate (%)</label>
+              <input type="number" id="item_tax" min="0" max="100" step="0.1" value="18" placeholder="18">
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top:20px;">
+            <button type="button" class="btn btn-ghost" id="cancelItemBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveItemBtn">Save Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('app').innerHTML = appShell('/items', 'Product &amp; Service Catalog', 'Inventory', content);
+  mountShellEvents();
+
+  function draw(){
+    const q = (document.getElementById('catSearch')?.value || '').trim().toLowerCase();
+    let items = getAll(DB.items).filter(it => it.userId === user.id);
+    if(q){
+      items = items.filter(it =>
+        it.name.toLowerCase().includes(q) ||
+        (it.desc && it.desc.toLowerCase().includes(q)) ||
+        (it.hsn && it.hsn.toLowerCase().includes(q))
+      );
+    }
+
+    const grid = document.getElementById('catalogGrid');
+    const totalCountEl = document.getElementById('catTotalCount');
+    const avgPriceEl = document.getElementById('catAvgPrice');
+
+    if(totalCountEl) totalCountEl.textContent = items.length;
+    if(avgPriceEl){
+      const sum = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
+      avgPriceEl.textContent = fmtMoney(items.length ? (sum / items.length) : 0);
+    }
+
+    if(!items.length){
+      grid.innerHTML = `<div class="card" style="grid-column:1/-1;padding:40px;text-align:center;color:var(--ink-soft);">No catalog items found. Click "+ Add New Item" to populate your inventory.</div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map(it => `
+      <div class="catalog-card">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <h3>${escapeHTML(it.name)}</h3>
+            ${it.hsn ? `<span class="badge-category cat-hardware mono" style="font-size:10.5px;">HSN: ${escapeHTML(it.hsn)}</span>` : ''}
+          </div>
+          <p>${escapeHTML(it.desc || 'No description provided.')}</p>
+        </div>
+        <div>
+          <div class="catalog-meta">
+            <div>
+              <div class="catalog-price">${fmtMoney(it.price)}</div>
+              <div style="font-size:11px;color:var(--ink-faint);">per ${escapeHTML(it.unit || 'unit')} (Tax: ${it.taxRate ?? 18}%)</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm edit-item-btn" data-id="${it.id}">Edit</button>
+              <button class="btn btn-danger btn-sm delete-item-btn" data-id="${it.id}">&times;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Attach card actions
+    document.querySelectorAll('.edit-item-btn').forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        const it = items.find(x => x.id === btn.getAttribute('data-id'));
+        if(!it) return;
+        document.getElementById('edit_item_id').value = it.id;
+        document.getElementById('item_name').value = it.name;
+        document.getElementById('item_desc').value = it.desc || '';
+        document.getElementById('item_hsn').value = it.hsn || '';
+        document.getElementById('item_unit').value = it.unit || 'pcs';
+        document.getElementById('item_price').value = it.price;
+        document.getElementById('item_tax').value = it.taxRate !== undefined ? it.taxRate : 18;
+        document.getElementById('itemModalTitle').textContent = 'Edit Catalog Item';
+        document.getElementById('itemModal').classList.add('show');
+      });
+    });
+
+    document.querySelectorAll('.delete-item-btn').forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        if(!confirm('Delete this item from your catalog?')) return;
+        let allItems = getAll(DB.items);
+        allItems = allItems.filter(x => x.id !== id);
+        setAll(DB.items, allItems);
+        showToast('Catalog item removed.');
+        draw();
+      });
+    });
+  }
+
+  draw();
+  document.getElementById('catSearch')?.addEventListener('input', draw);
+
+  const modal = document.getElementById('itemModal');
+  document.getElementById('openAddItemModal').addEventListener('click', ()=>{
+    document.getElementById('itemForm').reset();
+    document.getElementById('edit_item_id').value = '';
+    document.getElementById('itemModalTitle').textContent = 'Add Catalog Item';
+    modal.classList.add('show');
+  });
+
+  const closeModal = ()=> modal.classList.remove('show');
+  document.getElementById('closeItemModal').addEventListener('click', closeModal);
+  document.getElementById('cancelItemBtn').addEventListener('click', closeModal);
+
+  document.getElementById('itemForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const id = document.getElementById('edit_item_id').value;
+    const name = document.getElementById('item_name').value.trim();
+    const desc = document.getElementById('item_desc').value.trim();
+    const hsn = document.getElementById('item_hsn').value.trim();
+    const unit = document.getElementById('item_unit').value;
+    const price = Number(document.getElementById('item_price').value) || 0;
+    const taxRate = Number(document.getElementById('item_tax').value) || 0;
+
+    let items = getAll(DB.items);
+    if(id){
+      const idx = items.findIndex(x => x.id === id);
+      if(idx !== -1){
+        items[idx] = { ...items[idx], name, desc, hsn, unit, price, taxRate };
+      }
+    } else {
+      items.push({
+        id: uid('item'),
+        userId: user.id,
+        name, desc, hsn, unit, price, taxRate,
+        createdAt: Date.now()
+      });
+    }
+
+    setAll(DB.items, items);
+    closeModal();
+    showToast(id ? 'Catalog item updated.' : 'Item added to catalog.');
+    draw();
+  });
+
+  document.getElementById('exportCatalogCsvBtn').addEventListener('click', ()=>{
+    const items = getAll(DB.items).filter(it => it.userId === user.id);
+    const headers = ['Item Name', 'Description', 'HSN/SAC', 'Unit', 'Price', 'Tax Rate %'];
+    const rows = items.map(it => [
+      it.name, it.desc || '', it.hsn || '', it.unit || 'pcs', it.price, it.taxRate ?? 18
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `ledgerly-catalog-${todayISO()}.csv`;
+    link.click();
+    showToast('Catalog exported to CSV.');
+  });
+}
+
+/* ================================================================
+   VIEW: BUSINESS EXPENSE TRACKER (#/expenses)
+   ================================================================ */
+function renderExpenses(){
+  const user = currentUser();
+  const content = `
+    <div class="filter-bar">
+      <input type="text" id="expSearch" placeholder="Search expenses by vendor, title, or reference...">
+      <select id="expCategoryFilter">
+        <option value="">All Categories</option>
+        <option value="Software">Software &amp; Tools</option>
+        <option value="Hosting">Hosting &amp; Cloud</option>
+        <option value="Office">Office &amp; Coworking</option>
+        <option value="Marketing">Marketing &amp; Ads</option>
+        <option value="Hardware">Hardware &amp; Equipment</option>
+        <option value="Misc">Miscellaneous</option>
+      </select>
+      <button class="btn btn-primary" id="openAddExpModal" style="white-space:nowrap;">+ Log Expense</button>
+      <button class="btn btn-ghost" id="exportExpCsvBtn" style="white-space:nowrap;">📊 Export CSV</button>
+    </div>
+
+    <!-- Expenses Summary KPIs -->
+    <div class="stat-grid" style="margin-bottom:24px;">
+      <div class="card stat-card">
+        <div class="label">Total Logged Expenses</div>
+        <div class="value mono" id="kpiTotalExpenses" style="color:#b82d18;">₹0.00</div>
+        <div class="helper-text" id="kpiExpCount">0 Receipts Recorded</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">This Month's Spending</div>
+        <div class="value mono" id="kpiMonthExpenses" style="color:#b82d18;">₹0.00</div>
+        <div class="helper-text" id="kpiMonthLabel">Current Month</div>
+      </div>
+      <div class="card stat-card accent">
+        <div class="label">Top Spending Category</div>
+        <div class="value" id="kpiTopCategory" style="font-size:18px;">—</div>
+        <div class="helper-text">Highest operational outflow</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:22px 24px;">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Expense / Title</th>
+            <th>Category</th>
+            <th>Vendor / Payee</th>
+            <th>Payment Method</th>
+            <th>Ref / Invoice #</th>
+            <th class="num">Amount</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="expensesBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal-overlay" id="expModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2 id="expModalTitle">Log Business Expense</h2>
+          <button class="modal-close" id="closeExpModal">&times;</button>
+        </div>
+        <form id="expForm">
+          <input type="hidden" id="edit_exp_id">
+          <div class="field">
+            <label>Expense Title / Purpose *</label>
+            <input id="exp_title" required placeholder="e.g. AWS Cloud Hosting">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Category *</label>
+              <select id="exp_category">
+                <option value="Software">Software &amp; Tools</option>
+                <option value="Hosting">Hosting &amp; Cloud</option>
+                <option value="Office">Office &amp; Coworking</option>
+                <option value="Marketing">Marketing &amp; Ads</option>
+                <option value="Hardware">Hardware &amp; Equipment</option>
+                <option value="Misc">Miscellaneous</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Amount (₹) *</label>
+              <input type="number" id="exp_amount" required min="0" step="0.01" placeholder="1500.00">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Expense Date *</label>
+              <input type="date" id="exp_date" required value="${todayISO()}">
+            </div>
+            <div class="field">
+              <label>Vendor / Payee</label>
+              <input id="exp_vendor" placeholder="e.g. Amazon Web Services">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Payment Method</label>
+              <select id="exp_method">
+                <option value="Credit Card">Credit Card</option>
+                <option value="UPI">UPI</option>
+                <option value="Net Banking">Net Banking</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Receipt / Transaction Ref #</label>
+              <input id="exp_ref" class="mono" placeholder="INV-2026-991">
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top:20px;">
+            <button type="button" class="btn btn-ghost" id="cancelExpBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveExpBtn">Save Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('app').innerHTML = appShell('/expenses', 'Business Expense Tracker', 'Finances', content);
+  mountShellEvents();
+
+  function draw(){
+    const q = (document.getElementById('expSearch')?.value || '').trim().toLowerCase();
+    const cat = document.getElementById('expCategoryFilter')?.value || '';
+    let expenses = getAll(DB.expenses).filter(e => e.userId === user.id)
+      .sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+    // Compute KPIs
+    const totalExp = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const curMonthKey = todayISO().slice(0, 7);
+    const monthExp = expenses.filter(e => (e.date || '').startsWith(curMonthKey))
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+    const catSums = {};
+    expenses.forEach(e => {
+      catSums[e.category] = (catSums[e.category] || 0) + (Number(e.amount) || 0);
+    });
+    const topCat = Object.entries(catSums).sort((a,b)=> b[1] - a[1])[0];
+
+    document.getElementById('kpiTotalExpenses').textContent = fmtMoney(totalExp);
+    document.getElementById('kpiExpCount').textContent = `${expenses.length} Receipts Logged`;
+    document.getElementById('kpiMonthExpenses').textContent = fmtMoney(monthExp);
+    document.getElementById('kpiTopCategory').textContent = topCat ? `${topCat[0]} (${fmtMoney(topCat[1])})` : 'None';
+
+    if(cat) expenses = expenses.filter(e => e.category === cat);
+    if(q){
+      expenses = expenses.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.vendor && e.vendor.toLowerCase().includes(q)) ||
+        (e.ref && e.ref.toLowerCase().includes(q))
+      );
+    }
+
+    const tbody = document.getElementById('expensesBody');
+    if(!expenses.length){
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No expenses found matching filter criteria.</td></tr>`;
+      return;
+    }
+
+    const catClassMap = {
+      'Software': 'cat-software',
+      'Hosting': 'cat-hosting',
+      'Office': 'cat-office',
+      'Marketing': 'cat-marketing',
+      'Hardware': 'cat-hardware',
+      'Misc': 'cat-misc'
+    };
+
+    tbody.innerHTML = expenses.map(e => `
+      <tr>
+        <td class="mono">${fmtDate(e.date)}</td>
+        <td><strong>${escapeHTML(e.title)}</strong></td>
+        <td><span class="badge-category ${catClassMap[e.category] || 'cat-misc'}">${escapeHTML(e.category)}</span></td>
+        <td>${escapeHTML(e.vendor || '—')}</td>
+        <td>${escapeHTML(e.method || 'Direct')}</td>
+        <td class="mono" style="font-size:12px;">${escapeHTML(e.ref || '—')}</td>
+        <td class="num mono font-semibold" style="color:#b82d18;">−${fmtMoney(e.amount)}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-danger btn-sm delete-exp-btn" data-id="${e.id}">&times;</button>
+        </td>
+      </tr>
+    `).join('');
+
+    document.querySelectorAll('.delete-exp-btn').forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        if(!confirm('Delete this expense record?')) return;
+        let allExp = getAll(DB.expenses);
+        allExp = allExp.filter(x => x.id !== id);
+        setAll(DB.expenses, allExp);
+        showToast('Expense record deleted.');
+        draw();
+      });
+    });
+  }
+
+  draw();
+  document.getElementById('expSearch')?.addEventListener('input', draw);
+  document.getElementById('expCategoryFilter')?.addEventListener('change', draw);
+
+  const modal = document.getElementById('expModal');
+  document.getElementById('openAddExpModal').addEventListener('click', ()=>{
+    document.getElementById('expForm').reset();
+    document.getElementById('exp_date').value = todayISO();
+    document.getElementById('edit_exp_id').value = '';
+    modal.classList.add('show');
+  });
+
+  const closeModal = ()=> modal.classList.remove('show');
+  document.getElementById('closeExpModal').addEventListener('click', closeModal);
+  document.getElementById('cancelExpBtn').addEventListener('click', closeModal);
+
+  document.getElementById('expForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const title = document.getElementById('exp_title').value.trim();
+    const category = document.getElementById('exp_category').value;
+    const amount = Number(document.getElementById('exp_amount').value) || 0;
+    const date = document.getElementById('exp_date').value || todayISO();
+    const vendor = document.getElementById('exp_vendor').value.trim();
+    const method = document.getElementById('exp_method').value;
+    const ref = document.getElementById('exp_ref').value.trim();
+
+    let exps = getAll(DB.expenses);
+    exps.unshift({
+      id: uid('exp'),
+      userId: user.id,
+      title, category, amount, date, vendor, method, ref,
+      createdAt: Date.now()
+    });
+
+    setAll(DB.expenses, exps);
+    closeModal();
+    showToast('Business expense recorded.');
+    draw();
+  });
+
+  document.getElementById('exportExpCsvBtn').addEventListener('click', ()=>{
+    const expenses = getAll(DB.expenses).filter(e => e.userId === user.id);
+    const headers = ['Date', 'Title', 'Category', 'Vendor', 'Method', 'Ref', 'Amount'];
+    const rows = expenses.map(e => [
+      e.date, e.title, e.category, e.vendor || '', e.method || '', e.ref || '', e.amount
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `ledgerly-expenses-${todayISO()}.csv`;
+    link.click();
+    showToast('Expenses exported to CSV.');
   });
 }
