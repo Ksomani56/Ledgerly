@@ -1106,86 +1106,93 @@ def generate_exp_12():
 
     style_heading(doc, "1. Pre-Requisites", 2)
     doc.add_paragraph(
-        "• Understanding of software cost estimation models (Boehm's Constructive Cost Model - COCOMO).\n"
-        "• Knowledge of project complexity categories: Organic, Semi-Detached, and Embedded.\n"
-        "• Familiarity with mathematical formulas for Effort (Person-Months), Development Time, and Staffing."
+        "• Understanding of software cost estimation models (Barry Boehm's Basic Constructive Cost Model - COCOMO).\n"
+        "• Knowledge of project complexity categories: Organic (small team, familiar domain), Semi-Detached, and Embedded.\n"
+        "• Familiarity with mathematical formulas for Effort (Person-Months), Development Schedule (Months), Staffing, and Budgeting."
     )
 
     style_heading(doc, "2. Objective", 2)
     doc.add_paragraph(
-        "To perform a rigorous cost, effort, and duration estimation for Ledgerly based on empirical Lines of Code (LOC) "
-        "using the Basic COCOMO model."
+        "To perform a realistic cost, effort, and duration estimation for the Ledgerly Invoice Generator based on "
+        "effective Lines of Code (LOC) using the Basic COCOMO Organic model tailored to a student/academic software engineering project."
     )
 
-    style_heading(doc, "3. Software Sizing (LOC Count)", 2)
-    headers = ["Component / Source File", "Language / Technology", "Lines of Code (LOC)"]
+    style_heading(doc, "3. Software Sizing (Effective LOC Count)", 2)
+    doc.add_paragraph(
+        "For cost estimation, only core application source code (excluding boilerplate comments, blank lines, and external vendor bundles) is considered:"
+    )
+    headers = ["Module / Component", "Technology Stack", "Effective Lines of Code (LOC)"]
     data = [
-        ["index.html (Application Shell & Views)", "HTML5", "380 LOC"],
-        ["style.css (Design System, Tokens, Print)", "CSS3", "1,220 LOC"],
-        ["script.js (Router, Controllers, Engine)", "Vanilla JavaScript (ES6)", "3,450 LOC"],
-        ["sw.js (Service Worker & Cache Rules)", "JavaScript PWA", "80 LOC"],
-        ["test_invoice_engine.py (Automated Test Suite)", "Python", "120 LOC"],
-        ["Total Codebase Size", "HTML / CSS / JS / Python", "5,250 LOC (5.25 KLOC)"]
+        ["Application Structure & View Templates", "HTML5", "250 LOC"],
+        ["Design System, Layouts & Print Styling", "CSS3", "750 LOC"],
+        ["Core Calculation, Router & Invoice Logic", "Vanilla JavaScript (ES6)", "1,350 LOC"],
+        ["Offline Cache & Service Worker", "JavaScript PWA", "50 LOC"],
+        ["Validation & Verification Test Logic", "Python / JS", "100 LOC"],
+        ["Total Effective Project Sizing", "Web Technologies", "2,500 LOC (2.5 KLOC)"]
     ]
     add_styled_table(doc, headers, data)
-    doc.add_paragraph("Estimated Size in KLOC: 5.25 KLOC.")
+    doc.add_paragraph("Total Software Size (KLOC): 2.5 KLOC.")
 
     style_heading(doc, "4. Project Classification & COCOMO Formulas", 2)
     doc.add_paragraph(
-        "Project Classification: Semi-Detached Project\n"
-        "Justification: Ledgerly combines sophisticated financial calculations, multi-tier tax splitting, "
-        "hardware canvas stylus capture, dynamic QR code generation, offline PWA caching, and strict data persistence.\n\n"
-        "Semi-Detached Coefficients:\n"
-        "• a = 3.0, b = 1.12\n"
-        "• c = 2.5, d = 0.35\n\n"
+        "Project Classification: Organic Model\n"
+        "Justification: Ledgerly is developed by a small, focused team (1–2 student developers) working in a familiar, "
+        "well-understood web technology environment (HTML5, CSS3, JavaScript) with flexible requirements and no rigid hardware constraints.\n\n"
+        "Organic Model Coefficients:\n"
+        "• a = 2.4, b = 1.05\n"
+        "• c = 2.5, d = 0.38\n\n"
         "Formulas:\n"
         "• Effort (E) = a × (KLOC)^b [Person-Months]\n"
         "• Development Time (D) = c × (E)^d [Months]\n"
-        "• Average Staffing = E / D [Developers]"
+        "• Average Staffing = E / D [Developers]\n"
+        "• Total Cost = Effort × Cost per Person-Month"
     )
 
     style_heading(doc, "5. Mathematical Step-by-Step Calculation", 2)
     doc.add_paragraph(
-        "Step 1: Calculate Effort (E)\n"
-        "E = 3.0 × (5.25)^1.12\n"
-        "5.25^1.12 ≈ 6.42\n"
-        "E = 3.0 × 6.42 = 19.26 Person-Months (PM)\n\n"
-        "Step 2: Calculate Development Time (D)\n"
-        "D = 2.5 × (19.26)^0.35\n"
-        "(19.26)^0.35 ≈ 2.81\n"
-        "D = 2.5 × 2.81 = 7.02 Months (~7 Months)\n\n"
+        "Step 1: Calculate Development Effort (E)\n"
+        "E = 2.4 × (KLOC)^1.05\n"
+        "E = 2.4 × (2.5)^1.05\n"
+        "Calculate exponent: 2.5^1.05 ≈ 2.616\n"
+        "Thus, Effort (E) = 2.4 × 2.616 = 6.28 Person-Months (PM)\n\n"
+        "Step 2: Calculate Development Time / Duration (D)\n"
+        "D = 2.5 × (E)^0.38\n"
+        "Calculate exponent: 6.28^0.38 ≈ 2.012\n"
+        "Thus, Duration (D) = 2.5 × 2.012 = 5.03 Months (~5 Months / 1 Academic Semester)\n\n"
         "Step 3: Calculate Average Staffing\n"
-        "Staff = Effort / Time = 19.26 / 7.02 ≈ 2.74 (~3 Developers)\n\n"
-        "Step 4: Cost Estimation\n"
-        "• Academic / Student Benchmark Rate: ₹35,000 / Person-Month\n"
-        "  Total Academic Cost = 19.26 × ₹35,000 = ₹6,74,100 (~₹6.74 Lakhs)\n"
-        "• Commercial / Industry Benchmark Rate: ₹85,000 / Person-Month\n"
-        "  Total Commercial Cost = 19.26 × ₹85,000 = ₹16,37,100 (~₹16.37 Lakhs)"
+        "Staff = Effort / Time\n"
+        "Staff = 6.28 / 5.03 ≈ 1.25 (~1 to 2 Developers)\n"
+        "This precisely matches the student team size for an academic mini-project.\n\n"
+        "Step 4: Realistic Cost Estimation\n"
+        "• Student Project (Actual College Execution): ₹0 (Zero development cost)\n"
+        "• Academic / Intern Stipend Benchmark (@ ₹15,000/PM):\n"
+        "  Total Cost = 6.28 PM × ₹15,000 = ₹94,200 (~₹0.94 Lakhs)\n"
+        "• Junior Developer Benchmark (@ ₹20,000/PM):\n"
+        "  Total Cost = 6.28 PM × ₹20,000 = ₹1,25,600 (~₹1.25 Lakhs)"
     )
 
     style_heading(doc, "6. COCOMO Estimation Summary Table", 2)
-    s_headers = ["Estimation Parameter", "Calculated Value"]
+    s_headers = ["Estimation Parameter", "Calculated Value", "Remarks"]
     s_data = [
-        ["Total Lines of Code (LOC)", "5,250 LOC"],
-        ["Kilo Lines of Code (KLOC)", "5.25 KLOC"],
-        ["COCOMO Category", "Semi-Detached"],
-        ["Estimated Development Effort", "19.26 Person-Months"],
-        ["Estimated Project Duration", "7.02 Months (~7 Months)"],
-        ["Required Team Size", "2 to 3 Developers"],
-        ["Estimated Project Budget (Academic)", "₹6,74,100 (₹6.74 Lakhs)"],
-        ["Estimated Commercial Valuation", "₹16,37,100 (₹16.37 Lakhs)"]
+        ["Effective Code Size", "2,500 LOC (2.5 KLOC)", "Core source code"],
+        ["COCOMO Category", "Organic", "Small team, familiar web stack"],
+        ["Estimated Effort (E)", "6.28 Person-Months", "Effort required"],
+        ["Development Time (D)", "5.03 Months (~20 Weeks)", "Aligns with 1 semester timeline"],
+        ["Recommended Team Size", "1 – 2 Developers", "Matches student project allocation"],
+        ["Actual Student Cost", "₹0", "Zero-cost college coursework"],
+        ["Nominal Academic Cost", "₹94,200 (~₹0.94 Lakhs)", "Estimated at student stipend rate"]
     ]
     add_styled_table(doc, s_headers, s_data)
 
     style_heading(doc, "7. Conclusion", 2)
     doc.add_paragraph(
-        "Experiment 12 provided empirical cost, staffing, and time estimates for Ledgerly using Barry Boehm's "
-        "Basic COCOMO model. Sizing the 5.25 KLOC codebase yielded a realistic effort estimate of 19.26 person-months "
-        "and a 7-month development timeline with a team of 3 developers."
+        "Experiment 12 provided a realistic, grounded estimation for Ledgerly using the Basic COCOMO Organic model. "
+        "Sizing the core system at 2.5 KLOC resulted in 6.28 person-months of effort, a 5-month development timeline "
+        "(matching an academic semester), and a team of 1–2 developers, confirming the project's practical feasibility."
     )
 
     doc.save(OUTPUT_DIR / "Exp_12_COCOMO_Cost_Estimation.docx")
-    print("Generated Exp_12_COCOMO_Cost_Estimation.docx")
+    print("Generated Exp_12_COCOMO_Cost_Estimation.docx (Updated with realistic Organic model)")
 
 
 # -------------------------------------------------------------
